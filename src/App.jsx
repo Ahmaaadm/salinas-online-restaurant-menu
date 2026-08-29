@@ -2,6 +2,7 @@ import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { useMenuStore, toMenu, activeSpecials } from './lib/store.js';
 import PlatDuJour from './components/PlatDuJour.jsx';
 import { money } from './lib/money.js';
+import { whatsappNumber, whatsappUrl } from './lib/whatsapp.js';
 
 const ACCENT = '#2b7fa8';
 
@@ -82,7 +83,19 @@ function DishRow({ item, qty, onAdd }) {
   );
 }
 
+function WhatsAppIcon() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true" style={{ flex: 'none' }}>
+      <path d="M17.47 14.38c-.3-.15-1.76-.87-2.03-.97-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.35.22-.64.08-.3-.15-1.25-.46-2.39-1.47-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.6.13-.14.3-.35.44-.52.15-.18.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.61-.92-2.2-.24-.58-.49-.5-.67-.51h-.57c-.2 0-.52.07-.79.37-.27.3-1.04 1.01-1.04 2.470 1.19 1.07 2.9 1.22 3.1.15.2 2.1 3.2 5.08 4.49.71.3 1.26.49 1.69.63.71.22 1.36.19 1.87.12.57-.09 1.76-.72 2.01-1.41.25-.7.25-1.29.17-1.42-.07-.13-.27-.2-.57-.35z" />
+      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.46 1.32 4.96L2 22l5.25-1.38a9.9 9.9 0 0 0 4.79 1.22h.01c5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.82 9.82 0 0 0 12.04 2zm0 18.15h-.01a8.2 8.2 0 0 1-4.19-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.16 8.16 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.25-8.24 2.2 0 4.27.86 5.83 2.42a8.19 8.19 0 0 1 2.41 5.83c0 4.54-3.7 8.23-8.24 8.23z" />
+    </svg>
+  );
+}
+
 function OrderSheet({ lines, total, countLabel, onClose, onBump, onClear }) {
+  const [note, setNote] = useState('');
+  const href = whatsappUrl(lines, total, note);
+
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 70, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(6,26,36,.5)' }} />
@@ -121,6 +134,25 @@ function OrderSheet({ lines, total, countLabel, onClose, onBump, onClear }) {
             <div style={{ font: '500 11px/1 Manrope,sans-serif', letterSpacing: '.18em', textTransform: 'uppercase', color: '#8ea9b8' }}>Total</div>
             <div style={{ font: '700 24px/1 Manrope,sans-serif', color: '#0b2f42' }}>{money(total)}</div>
           </div>
+
+          {lines.length > 0 && whatsappNumber && (
+            <>
+              <input value={note} onChange={e => setNote(e.target.value)} maxLength={60}
+                placeholder="Your name or table number (optional)"
+                style={{ width: '100%', padding: '11px 13px', borderRadius: 13, border: '1px solid rgba(11,45,62,.14)', background: '#f7fbfc', color: '#0b2f42', font: '500 13px/1.2 Manrope,sans-serif' }} />
+
+              <a href={href} target="_blank" rel="noopener noreferrer"
+                style={{ width: '100%', padding: 15, borderRadius: 14, background: '#25D366', color: '#0a3622', font: '700 14.5px/1 Manrope,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, boxShadow: '0 8px 20px rgba(37,211,102,.32)' }}>
+                <WhatsAppIcon />
+                Send order on WhatsApp
+              </a>
+
+              <div style={{ font: '400 11px/1.5 Manrope,sans-serif', color: '#a9bec9', textAlign: 'center' }}>
+                Opens WhatsApp with your order written out — you still press send. No payment here.
+              </div>
+            </>
+          )}
+
           <button type="button" onClick={onClear} style={{ width: '100%', padding: 13, borderRadius: 14, border: '1px solid rgba(11,45,62,.14)', background: 'transparent', color: '#5d7d8e', font: '600 13px/1 Manrope,sans-serif', cursor: 'pointer' }}>Clear selection</button>
         </div>
       </div>
