@@ -1,8 +1,10 @@
 # Salinas Online Menu — project conventions
 
 Mobile-first (max width 430px, centered) online menu for a Lebanese seafood restaurant.
-Display only: **no checkout, no delivery, no pickup** — tapping a dish just adds it to a local
-selection so guests can tally what they want.
+Display only: **no checkout, no payment, no delivery tracking** — tapping a dish just adds it to
+a local selection so guests can tally what they want. The selection can be handed off to the
+restaurant's WhatsApp as a pre-written message (`src/lib/whatsapp.js`); the guest presses send
+themselves and the restaurant confirms in the chat. Never add a payment step.
 
 ## Rules
 - Menu content comes from the data layer (`src/lib/store.js`), never hardcoded in JSX.

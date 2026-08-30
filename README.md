@@ -1,6 +1,6 @@
 # Salinas — Online Menu (React + Vite)
 
-Mobile-first online menu for **Salinas · Chef de la Mer Abo Mazloum**. Tap a dish to add it, the sticky bar shows the running total, "View Order" opens the order sheet. No ordering / delivery — display only.
+Mobile-first online menu for **Salinas · Chef de la Mer Abo Mazloum**. Tap a dish to add it, the sticky bar shows the running total, "View Order" opens the order sheet, and the selection can be sent to the restaurant over WhatsApp. No payment, no delivery tracking — the order is a message, not a checkout.
 
 An animated **Plat du Jour** carousel sits above the categories, and staff manage everything from an admin panel at `#/admin`.
 
@@ -23,6 +23,33 @@ claude                 # start Claude Code inside that folder (in the VS Code te
 ```
 
 Then ask Claude Code things like "add a search field to the menu" or "make the order sheet send a WhatsApp message". `CLAUDE.md` in this folder tells it the project conventions.
+
+## Ordering over WhatsApp
+
+Set the restaurant's number in `.env` and the order sheet grows a **Send order on WhatsApp** button:
+
+```
+VITE_WHATSAPP_NUMBER=221771234567    # country code first, digits only, no + or spaces
+```
+
+Leave it empty and the button never renders — the menu stays purely display-only.
+
+The guest optionally types a name or table number, taps the button, and WhatsApp opens with the
+order already written:
+
+```
+*SALINAS — New order*
+
+2 × Fried Calamari — 15 000 FCFA
+1 × Whole Sea Bass — 17 000 FCFA
+
+*Total: 32 000 FCFA*
+
+Name / table: Ahmad — table 4
+```
+
+They press send themselves; the restaurant confirms in the chat. There is no payment step and
+no order is stored anywhere — it is a handoff, not a checkout.
 
 ## Admin panel
 
@@ -91,6 +118,8 @@ Local-mode edits live in one browser and do **not** migrate. The menu comes in v
 | `src/lib/localAdapter.js` | localStorage implementation |
 | `src/lib/supabaseAdapter.js` | Supabase implementation (lazy-loaded) |
 | `src/lib/images.js` | Browser-side resize + compress before upload |
+| `src/lib/money.js` | FCFA formatting, shared by menu and admin |
+| `src/lib/whatsapp.js` | Builds the order message and the `wa.me` link |
 | `src/admin/AdminApp.jsx` | The admin panel — login, tabs, editors |
 | `src/admin/ui.jsx` | Shared form controls for the panel |
 | `supabase/schema.sql` | Tables, row-level security, storage bucket |
