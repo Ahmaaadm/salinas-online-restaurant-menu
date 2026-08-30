@@ -57,11 +57,25 @@ Open `#/admin` (or tap **Staff** at the bottom of the menu). Three tabs:
 
 | Tab | What you can do |
 | --- | --- |
-| Plat du Jour | Add, reorder, hide, or delete carousel slides — name, Arabic, tagline, price, photo |
+| Plat du Jour | Plan the week — pick a day, add as many plats as you like to it, reorder, hide, delete |
 | Dishes | Add/edit any dish, move it between categories, mark it sold out, reorder within a category |
 | Categories | Add/edit/reorder categories. Deleting one deletes its dishes. Empty categories are hidden |
 
 Photos are resized and compressed in the browser before they are stored.
+
+### Planning the week
+
+The **Plat du Jour** tab is a week planner. Arrows move between weeks, the seven chips are the
+days (a dot per plat, so gaps are obvious), and everything below applies to the day you picked.
+
+The intended rhythm is that the owner sits down on Sunday and fills the week ahead — which is
+why the tab opens on **next** week when today is Sunday. A day can hold as many plats as you
+want; guests only ever see the ones dated to the day they are visiting.
+
+Leave a plat's day as **Every day (no set date)** and it shows permanently, listed separately
+under *Always showing*. Today's dated plats appear first in the carousel, evergreen ones after.
+
+Weeks run Monday–Sunday, and dates are the restaurant's own local calendar days.
 
 ## Data: local mode vs Supabase
 
@@ -79,6 +93,8 @@ restaurant, since edits don't reach other devices.
 3. SQL Editor → paste and run `supabase/seed.sql` (your categories and dishes).
 4. SQL Editor → paste and run `supabase/open-writes.sql` — required, because the panel uses a
    static passcode rather than Supabase Auth. Read the header comment in that file first.
+   *(Already have the tables from an earlier version? Run `supabase/add-service-date.sql` too —
+   it adds the plat du jour scheduling column.)*
 5. Copy `.env.example` to `.env` and fill in:
 
    ```
@@ -122,7 +138,9 @@ Local-mode edits live in one browser and do **not** migrate. The menu comes in v
 | `src/lib/whatsapp.js` | Builds the order message and the `wa.me` link |
 | `src/admin/AdminApp.jsx` | The admin panel — login, tabs, editors |
 | `src/admin/ui.jsx` | Shared form controls for the panel |
+| `src/lib/week.js` | Local-time date helpers for the week planner |
 | `supabase/schema.sql` | Tables, row-level security, storage bucket |
+| `supabase/add-service-date.sql` | Migration adding plat du jour scheduling |
 | `src/index.css` | Resets, CSS variables (colors/fonts), keyframes |
 | `index.html` | Google Fonts (Cormorant Garamond + Manrope), viewport, theme color |
 

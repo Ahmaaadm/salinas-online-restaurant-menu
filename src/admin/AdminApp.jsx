@@ -1,6 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { adapter, usingSupabase, useMenuStore } from '../lib/store.js';
 import { money, PRICE_STEP } from '../lib/money.js';
+import {
+  addDays, dayOfMonth, formatDay, formatWeekRange, startOfWeek,
+  toISODate, todayISO, weekDates, weekdayShortOf
+} from '../lib/week.js';
 import { Button, Card, Empty, Field, ImagePicker, Text, Toggle, ACCENT, LINE, NAVY, inputStyle, label } from './ui.jsx';
 
 const byOrder = (a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0);
@@ -107,16 +111,26 @@ function Editor({ title, onClose, onSave, onDelete, canSave, children }) {
   );
 }
 
-function SpecialEditor({ row, onClose, run }) {
+function SpecialEditor({ row, days, onClose, run }) {
   const [f, setF] = useState(row);
   const set = patch => setF(v => ({ ...v, ...patch }));
 
+  /* An edited plat may sit outside the week on screen — keep its own date
+     in the list so switching weeks never silently reschedules it. */
+  const dayOptions = [...new Set([...days, ...(f.service_date ? [f.service_date] : [])])].sort();
+
   return (
-    <Editor title={row.id ? 'Edit special' : 'New plat du jour'} onClose={onClose}
+    <Editor title={row.id ? 'Edit plat du jour' : 'New plat du jour'} onClose={onClose}
       canSave={Boolean(f.name?.trim())}
       onSave={() => run('saveSpecial', { ...f, id: f.id || newId(f.name), price: Math.round(Number(f.price)) || 0 })}
       onDelete={row.id ? () => run('deleteSpecial', row.id) : null}>
       <ImagePicker value={f.image_url} onChange={u => set({ image_url: u })} upload={adapter.uploadImage} slotLabel="plat du jour" />
+      <Field title="Serving day" hint="Guests only see this on the day it is set to.">
+        <select value={f.service_date ?? ''} onChange={e => set({ service_date: e.target.value || null })} style={inputStyle}>
+          <option value="">Every day (no set date)</option>
+          {dayOptions.map(iso => <option key={iso} value={iso}>{formatDay(iso)}</option>)}
+        </select>
+      </Field>
       <Field title="Dish name"><Text value={f.name} onChange={e => set({ name: e.target.value })} placeholder="Grilled Loup de Mer" /></Field>
       <Field title="Arabic" hint="Shown beneath the name, right to left.">
         <Text rtl value={f.arabic || ''} onChange={e => set({ arabic: e.target.value })} placeholder="لوت دو مير مشوي" />
@@ -222,6 +236,54 @@ function Row({ item, subtitle, meta, dim, onEdit, onMove, first, last }) {
   );
 }
 
+/* Week strip: arrows to move between weeks, one chip per day, a dot showing
+   how many plats are planned so gaps in the week are obvious at a glance. */
+function WeekBar({ weekStart, days, selected, countFor, onSelect, onShift, onToday }) {
+  const today = todayISO();
+  const arrow = {
+    width: 30, height: 30, borderRadius: 9, border: `1px solid ${LINE}`,
+    background: '#fff', color: '#4b7085', cursor: 'pointer', font: '400 12px/1 Manrope,sans-serif'
+  };
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+        <button type="button" aria-label="Previous week" onClick={() => onShift(-1)} style={arrow}>◀</button>
+        <div style={{ flex: 1, textAlign: 'center', font: '600 13px/1 Manrope,sans-serif', color: NAVY }}>
+          {formatWeekRange(weekStart)}
+        </div>
+        <button type="button" aria-label="Next week" onClick={() => onShift(1)} style={arrow}>▶</button>
+        <Button onClick={onToday} style={{ padding: '8px 11px', font: '600 11.5px/1 Manrope,sans-serif' }}>Today</Button>
+      </div>
+
+      <div className="no-scrollbar" style={{ display: 'flex', gap: 6, overflowX: 'auto' }}>
+        {days.map(iso => {
+          const on = iso === selected;
+          const n = countFor(iso);
+          return (
+            <button key={iso} type="button" onClick={() => onSelect(iso)}
+              style={{ flex: 1, minWidth: 46, padding: '9px 2px 8px', borderRadius: 12, cursor: 'pointer', transition: 'all .16s ease', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, border: `1px solid ${on ? ACCENT : LINE}`, background: on ? ACCENT : '#fff', color: on ? '#fff' : '#4b7085' }}>
+              <span style={{ font: '600 9.5px/1 Manrope,sans-serif', letterSpacing: '.08em', textTransform: 'uppercase', opacity: on ? .85 : .6 }}>
+                {weekdayShortOf(iso)}
+              </span>
+              <span style={{ font: '700 15px/1 Manrope,sans-serif' }}>{dayOfMonth(iso)}</span>
+              <span style={{ height: 5, display: 'flex', alignItems: 'center', gap: 2 }}>
+                {n === 0
+                  ? <span style={{ width: 4, height: 4, borderRadius: 2, background: on ? 'rgba(255,255,255,.35)' : 'rgba(11,45,62,.14)' }} />
+                  : Array.from({ length: Math.min(n, 3) }, (_, i) =>
+                    <span key={i} style={{ width: 4, height: 4, borderRadius: 2, background: on ? '#fff' : ACCENT }} />)}
+              </span>
+              {iso === today && (
+                <span style={{ font: '600 7.5px/1 Manrope,sans-serif', letterSpacing: '.1em', textTransform: 'uppercase', color: on ? 'rgba(255,255,255,.8)' : '#a9bec9' }}>now</span>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 function Section({ title, count, children }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -247,9 +309,26 @@ function Panel({ onOut }) {
   const [tab, setTab] = useState('specials');
   const [editing, setEditing] = useState(null);
 
+  /* Planning happens on Sunday for the week ahead, so open on next week
+     when it is already Sunday and this week is effectively spent. */
+  const [weekStart, setWeekStart] = useState(() => {
+    const today = new Date();
+    return startOfWeek(today.getDay() === 0 ? addDays(today, 1) : today);
+  });
+  const [selectedDay, setSelectedDay] = useState(() => {
+    const today = new Date();
+    return toISODate(today.getDay() === 0 ? addDays(today, 1) : today);
+  });
+
   const categories = useMemo(() => [...(db.categories ?? [])].sort(byOrder), [db]);
   const specials = useMemo(() => [...(db.specials ?? [])].sort(byOrder), [db]);
   const dishesIn = id => (db.dishes ?? []).filter(d => d.category_id === id).sort(byOrder);
+
+  /* Plat du jour is planned a week at a time, several plats per day. */
+  const days = useMemo(() => weekDates(weekStart), [weekStart]);
+  const specialsOn = iso => specials.filter(s => s.service_date === iso);
+  const daySpecials = useMemo(() => specialsOn(selectedDay), [specials, selectedDay]);
+  const evergreen = useMemo(() => specials.filter(s => !s.service_date), [specials]);
 
   /* Renumbers the whole group so a swap can never collide with stale values. */
   const reorder = (kind, list, from, dir) => {
@@ -262,6 +341,10 @@ function Panel({ onOut }) {
       .filter(r => r.sort_order !== list.find(x => x.id === r.id).sort_order);
     return run('saveMany', kind, changed);
   };
+
+  useEffect(() => {
+    if (!days.includes(selectedDay)) setSelectedDay(days[0]);
+  }, [days, selectedDay]);
 
   if (loading) return <Center>Loading the menu…</Center>;
   if (error) return <Center>{error}</Center>;
@@ -298,17 +381,39 @@ function Panel({ onOut }) {
 
         <main style={{ padding: '18px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
           {tab === 'specials' && (
-            <Section title="Plat du Jour" count={`${specials.length} slide${specials.length === 1 ? '' : 's'}`}>
-              {specials.length === 0
-                ? <Empty>No specials yet — the carousel stays hidden.</Empty>
-                : specials.map((s, i) => (
-                  <Row key={s.id} item={s} subtitle={s.arabic} dim={s.active === false}
-                    meta={`${money(s.price)}${s.active === false ? ' · hidden' : ''}`}
-                    first={i === 0} last={i === specials.length - 1}
-                    onMove={d => reorder('specials', specials, i, d)}
-                    onEdit={() => setEditing({ kind: 'special', row: s })} />
-                ))}
-            </Section>
+            <>
+              <WeekBar
+                weekStart={weekStart} days={days} selected={selectedDay}
+                countFor={iso => specialsOn(iso).length}
+                onSelect={setSelectedDay}
+                onShift={n => setWeekStart(w => addDays(w, n * 7))}
+                onToday={() => { const w = startOfWeek(new Date()); setWeekStart(w); setSelectedDay(todayISO()); }} />
+
+              <Section title={formatDay(selectedDay)}
+                count={`${daySpecials.length} plat${daySpecials.length === 1 ? '' : 's'}`}>
+                {daySpecials.length === 0
+                  ? <Empty>Nothing planned for this day yet.</Empty>
+                  : daySpecials.map((s, i) => (
+                    <Row key={s.id} item={s} subtitle={s.arabic} dim={s.active === false}
+                      meta={`${money(s.price)}${s.active === false ? ' · hidden' : ''}`}
+                      first={i === 0} last={i === daySpecials.length - 1}
+                      onMove={d => reorder('specials', daySpecials, i, d)}
+                      onEdit={() => setEditing({ kind: 'special', row: s })} />
+                  ))}
+              </Section>
+
+              {evergreen.length > 0 && (
+                <Section title="Always showing" count={`${evergreen.length} · every day`}>
+                  {evergreen.map((s, i) => (
+                    <Row key={s.id} item={s} subtitle={s.arabic} dim={s.active === false}
+                      meta={`${money(s.price)}${s.active === false ? ' · hidden' : ''}`}
+                      first={i === 0} last={i === evergreen.length - 1}
+                      onMove={d => reorder('specials', evergreen, i, d)}
+                      onEdit={() => setEditing({ kind: 'special', row: s })} />
+                  ))}
+                </Section>
+              )}
+            </>
           )}
 
           {tab === 'dishes' && (
@@ -351,18 +456,18 @@ function Panel({ onOut }) {
           <div style={{ width: '100%', maxWidth: 520, pointerEvents: 'auto', padding: '12px 16px 18px', background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(14px)', borderTop: `1px solid ${LINE}` }}>
             <Button tone="dark" style={{ width: '100%', padding: 14 }}
               onClick={() => setEditing(
-                tab === 'specials' ? { kind: 'special', row: { name: '', arabic: '', tagline: '', price: '', image_url: null, active: true, sort_order: specials.length } }
+                tab === 'specials' ? { kind: 'special', row: { name: '', arabic: '', tagline: '', price: '', image_url: null, active: true, service_date: selectedDay, sort_order: daySpecials.length } }
                   : tab === 'dishes' ? { kind: 'dish', row: { name: '', arabic: '', price: '', image_url: null, slot: '', available: true, category_id: categories[0]?.id ?? '', sort_order: 999 } }
                     : { kind: 'category', row: { name: '', arabic: '', image_url: null, sort_order: categories.length } }
               )}
               disabled={tab === 'dishes' && categories.length === 0}>
-              + Add {tab === 'specials' ? 'plat du jour' : tab === 'dishes' ? 'dish' : 'category'}
+              + Add {tab === 'specials' ? `plat du jour · ${weekdayShortOf(selectedDay)} ${dayOfMonth(selectedDay)}` : tab === 'dishes' ? 'dish' : 'category'}
             </Button>
           </div>
         </div>
       </div>
 
-      {editing?.kind === 'special' && <SpecialEditor row={editing.row} run={run} onClose={() => setEditing(null)} />}
+      {editing?.kind === 'special' && <SpecialEditor row={editing.row} days={days} run={run} onClose={() => setEditing(null)} />}
       {editing?.kind === 'dish' && <DishEditor row={editing.row} categories={categories} run={run} onClose={() => setEditing(null)} />}
       {editing?.kind === 'category' && <CategoryEditor row={editing.row} dishCount={dishesIn(editing.row.id).length} run={run} onClose={() => setEditing(null)} />}
     </div>

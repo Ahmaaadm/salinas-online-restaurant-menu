@@ -29,10 +29,12 @@ create table if not exists specials (
   price       numeric(10,2) not null default 0,
   image_url   text,
   active      boolean not null default true,
+  service_date date,
   sort_order  int  not null default 0
 );
 
 create index if not exists dishes_category_idx on dishes (category_id, sort_order);
+create index if not exists specials_service_date_idx on specials (service_date, sort_order);
 
 -- Row level security -------------------------------------------------------
 alter table categories enable row level security;

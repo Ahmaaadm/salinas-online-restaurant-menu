@@ -22,7 +22,12 @@ themselves and the restaurant confirms in the chat. Never add a payment step.
 - Fonts: Cormorant Garamond (display/serif), Manrope (UI). Loaded in `index.html`.
 - `image_url: null` renders a striped placeholder — do not delete that fallback.
 - Plat du jour is its own `specials` table, not a flag on dishes. The carousel hides itself
-  when there are no active specials.
+  when there are no active specials for today.
+- Specials are scheduled per calendar day via `service_date`; several plats may share a day.
+  `service_date = null` means "every day". Guests see `specialsForDate(db, todayISO())`.
+  Dates are local-time throughout (`src/lib/week.js`) — never `toISOString()`, which would
+  shift the day across midnight. Weeks run Monday–Sunday; the planner opens on next week when
+  today is Sunday, because that is when the owner plans.
 - Admin panel is at `#/admin` (hash routing, no router dependency) and is lazy-loaded so
   guests never download it. Keep it that way.
 - Admin sign-in is a static passcode (`VITE_ADMIN_PASSCODE`, default `salinas`) in

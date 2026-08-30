@@ -23,8 +23,16 @@ export function toMenu(db) {
   }));
 }
 
-export const activeSpecials = db =>
-  (db.specials ?? []).filter(s => s.active !== false).sort(byOrder);
+/* Specials the guest should see on a given day: the ones scheduled for that
+   date, plus any left undated, which act as "always showing".
+   Today's plats lead — otherwise an evergreen one interleaves with them
+   wherever sort_order happens to tie. */
+const datedFirst = s => (s.service_date ? 0 : 1);
+
+export const specialsForDate = (db, iso) =>
+  (db.specials ?? [])
+    .filter(s => s.active !== false && (!s.service_date || s.service_date === iso))
+    .sort((a, b) => datedFirst(a) - datedFirst(b) || byOrder(a, b));
 
 const EMPTY = { categories: [], dishes: [], specials: [] };
 

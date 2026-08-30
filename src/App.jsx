@@ -1,8 +1,9 @@
 import React, { useMemo, useState, useEffect, useRef } from 'react';
-import { useMenuStore, toMenu, activeSpecials } from './lib/store.js';
+import { useMenuStore, toMenu, specialsForDate } from './lib/store.js';
 import PlatDuJour from './components/PlatDuJour.jsx';
 import { money } from './lib/money.js';
 import { whatsappNumber, whatsappUrl } from './lib/whatsapp.js';
+import { todayISO } from './lib/week.js';
 
 const ACCENT = '#2b7fa8';
 
@@ -189,7 +190,8 @@ export default function App() {
   useEffect(() => () => clearTimeout(toastTimer.current), []);
 
   const menu = useMemo(() => toMenu(db).filter(g => g.items.length > 0), [db]);
-  const specials = useMemo(() => activeSpecials(db), [db]);
+  const today = todayISO();
+  const specials = useMemo(() => specialsForDate(db, today), [db, today]);
 
   /* Specials are addable too, so the order sheet has to resolve both. */
   const addressable = useMemo(
