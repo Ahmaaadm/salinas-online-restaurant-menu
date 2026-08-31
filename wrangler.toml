@@ -1,0 +1,14 @@
+# Cloudflare deployment. The site is static — no Worker script — so `main`
+# is intentionally absent and `npx wrangler deploy` just uploads ./dist.
+#
+# The VITE_* variables are NOT set here: Vite bakes them in at build time, so
+# they belong in the dashboard under Build variables, not Worker variables.
+
+name = "salinas-online-restaurant-menu"
+compatibility_date = "2026-08-31"
+
+[assets]
+directory = "./dist"
+# Hash routing means #/admin never reaches the server, but this keeps any
+# stray deep link returning the app instead of a 404.
+not_found_handling = "single-page-application"
