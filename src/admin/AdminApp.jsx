@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { adapter, usingSupabase, useMenuStore } from '../lib/store.js';
+import { adapter, toMenu, usingSupabase, useMenuStore } from '../lib/store.js';
+import PrintMenu from '../components/PrintMenu.jsx';
 import { money, PRICE_STEP } from '../lib/money.js';
 import {
   addDays, dayOfMonth, formatDay, formatWeekRange, startOfWeek,
@@ -121,13 +122,13 @@ function SpecialEditor({ row, days, onClose, run }) {
 
   return (
     <Editor title={row.id ? 'Edit plat du jour' : 'New plat du jour'} onClose={onClose}
-      canSave={Boolean(f.name?.trim())}
+      canSave={Boolean(f.name?.trim() && f.service_date)}
       onSave={() => run('saveSpecial', { ...f, id: f.id || newId(f.name), price: Math.round(Number(f.price)) || 0 })}
       onDelete={row.id ? () => run('deleteSpecial', row.id) : null}>
       <ImagePicker value={f.image_url} onChange={u => set({ image_url: u })} upload={adapter.uploadImage} slotLabel="plat du jour" />
       <Field title="Serving day" hint="Guests only see this on the day it is set to.">
         <select value={f.service_date ?? ''} onChange={e => set({ service_date: e.target.value || null })} style={inputStyle}>
-          <option value="">Every day (no set date)</option>
+          <option value="" disabled>Choose a day…</option>
           {dayOptions.map(iso => <option key={iso} value={iso}>{formatDay(iso)}</option>)}
         </select>
       </Field>
@@ -284,12 +285,15 @@ function WeekBar({ weekStart, days, selected, countFor, onSelect, onShift, onTod
   );
 }
 
-function Section({ title, count, children }) {
+function Section({ title, count, action, children }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', padding: '0 4px' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 10, padding: '0 4px' }}>
         <span style={{ font: "400 20px/1 'Cormorant Garamond',serif", color: NAVY, letterSpacing: '.03em' }}>{title}</span>
-        <span style={label}>{count}</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={label}>{count}</span>
+          {action}
+        </span>
       </div>
       <Card>{children}</Card>
     </div>
@@ -308,6 +312,7 @@ function Panel({ onOut }) {
   const { db, loading, error, run } = useMenuStore();
   const [tab, setTab] = useState('specials');
   const [editing, setEditing] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   /* Planning happens on Sunday for the week ahead, so open on next week
      when it is already Sunday and this week is effectively spent. */
@@ -328,7 +333,10 @@ function Panel({ onOut }) {
   const days = useMemo(() => weekDates(weekStart), [weekStart]);
   const specialsOn = iso => specials.filter(s => s.service_date === iso);
   const daySpecials = useMemo(() => specialsOn(selectedDay), [specials, selectedDay]);
-  const evergreen = useMemo(() => specials.filter(s => !s.service_date), [specials]);
+
+  /* The printed carte is the full menu, minus empty categories and minus
+     plat du jour, which PrintMenu never receives. */
+  const printableMenu = useMemo(() => toMenu(db).filter(c => c.items.length > 0), [db]);
 
   /* Renumbers the whole group so a swap can never collide with stale values. */
   const reorder = (kind, list, from, dir) => {
@@ -350,7 +358,8 @@ function Panel({ onOut }) {
   if (error) return <Center>{error}</Center>;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#eef4f7' }}>
+    <>
+      <div className="screen-only" style={{ minHeight: '100vh', background: '#eef4f7' }}>
       <div style={{ maxWidth: 520, margin: '0 auto', minHeight: '100vh', background: '#f7fbfc', paddingBottom: 110 }}>
 
         <header style={{ padding: '18px 20px 16px', background: 'linear-gradient(168deg,#0b2f42 0%,#12455e 100%)', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
@@ -402,17 +411,6 @@ function Panel({ onOut }) {
                   ))}
               </Section>
 
-              {evergreen.length > 0 && (
-                <Section title="Always showing" count={`${evergreen.length} · every day`}>
-                  {evergreen.map((s, i) => (
-                    <Row key={s.id} item={s} subtitle={s.arabic} dim={s.active === false}
-                      meta={`${money(s.price)}${s.active === false ? ' · hidden' : ''}`}
-                      first={i === 0} last={i === evergreen.length - 1}
-                      onMove={d => reorder('specials', evergreen, i, d)}
-                      onEdit={() => setEditing({ kind: 'special', row: s })} />
-                  ))}
-                </Section>
-              )}
             </>
           )}
 
@@ -453,8 +451,8 @@ function Panel({ onOut }) {
         </main>
 
         <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-          <div style={{ width: '100%', maxWidth: 520, pointerEvents: 'auto', padding: '12px 16px 18px', background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(14px)', borderTop: `1px solid ${LINE}` }}>
-            <Button tone="dark" style={{ width: '100%', padding: 14 }}
+          <div style={{ width: '100%', maxWidth: 520, pointerEvents: 'auto', padding: '12px 16px 18px', background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(14px)', borderTop: `1px solid ${LINE}`, display: 'flex', gap: 10 }}>
+            <Button tone="dark" style={{ flex: 1, padding: 14 }}
               onClick={() => setEditing(
                 tab === 'specials' ? { kind: 'special', row: { name: '', arabic: '', tagline: '', price: '', image_url: null, active: true, service_date: selectedDay, sort_order: daySpecials.length } }
                   : tab === 'dishes' ? { kind: 'dish', row: { name: '', arabic: '', price: '', image_url: null, slot: '', available: true, category_id: categories[0]?.id ?? '', sort_order: 999 } }
@@ -463,6 +461,17 @@ function Panel({ onOut }) {
               disabled={tab === 'dishes' && categories.length === 0}>
               + Add {tab === 'specials' ? `plat du jour · ${weekdayShortOf(selectedDay)} ${dayOfMonth(selectedDay)}` : tab === 'dishes' ? 'dish' : 'category'}
             </Button>
+
+            {/* Staff-only: the printed carte is a back-office job, not
+                something guests should be generating. */}
+            <Button onClick={() => setExporting(true)} disabled={exporting || printableMenu.length === 0}
+              title="Export the full menu as an A4 PDF"
+              style={{ flex: 'none', padding: '14px 15px', display: 'flex', alignItems: 'center', gap: 7 }}>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M6 9V2h12v7" /><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" /><path d="M6 14h12v8H6z" />
+              </svg>
+              {exporting ? '…' : 'A4'}
+            </Button>
           </div>
         </div>
       </div>
@@ -470,7 +479,10 @@ function Panel({ onOut }) {
       {editing?.kind === 'special' && <SpecialEditor row={editing.row} days={days} run={run} onClose={() => setEditing(null)} />}
       {editing?.kind === 'dish' && <DishEditor row={editing.row} categories={categories} run={run} onClose={() => setEditing(null)} />}
       {editing?.kind === 'category' && <CategoryEditor row={editing.row} dishCount={dishesIn(editing.row.id).length} run={run} onClose={() => setEditing(null)} />}
-    </div>
+      </div>
+
+      {exporting && <PrintMenu menu={printableMenu} onDone={() => setExporting(false)} />}
+    </>
   );
 }
 

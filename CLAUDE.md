@@ -23,8 +23,9 @@ themselves and the restaurant confirms in the chat. Never add a payment step.
 - `image_url: null` renders a striped placeholder — do not delete that fallback.
 - Plat du jour is its own `specials` table, not a flag on dishes. The carousel hides itself
   when there are no active specials for today.
-- Specials are scheduled per calendar day via `service_date`; several plats may share a day.
-  `service_date = null` means "every day". Guests see `specialsForDate(db, todayISO())`.
+- Specials are scheduled per calendar day via `service_date`, which is required; several plats
+  may share a day. There is no undated "always showing" plat — that was removed deliberately,
+  a plat du jour belongs to a day. Guests see `specialsForDate(db, todayISO())`.
   Dates are local-time throughout (`src/lib/week.js`) — never `toISOString()`, which would
   shift the day across midnight. Weeks run Monday–Sunday; the planner opens on next week when
   today is Sunday, because that is when the owner plans.
@@ -36,6 +37,14 @@ themselves and the restaurant confirms in the chat. Never add a payment step.
   treat the panel as unprotected and never put anything sensitive behind it.
 - Photos are resized in the browser before upload (`src/lib/images.js`) — the Supabase free
   tier has no server-side image transformation.
+
+- The A4 export (`src/components/PrintMenu.jsx` + the `@media print` block in `index.css`) is a
+  separate document, not the screen menu reflowed. It is **admin-only** — mounted from
+  `AdminApp`, so it stays in the lazy chunk and guests never download it. It mounts only while
+  exporting, waits for images, then calls `window.print()`, and never includes plat du jour.
+  Both the guest shell and the admin panel carry `.screen-only` so print hides them; keep that.
+- Print styling must not rely on `background`/gradients — Chrome's "Background graphics" box is
+  unchecked by default and drops them. Use rules, borders and `<img>`.
 
 ## Commands
 - `npm run dev` — dev server

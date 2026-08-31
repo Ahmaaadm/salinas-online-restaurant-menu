@@ -72,8 +72,8 @@ The intended rhythm is that the owner sits down on Sunday and fills the week ahe
 why the tab opens on **next** week when today is Sunday. A day can hold as many plats as you
 want; guests only ever see the ones dated to the day they are visiting.
 
-Leave a plat's day as **Every day (no set date)** and it shows permanently, listed separately
-under *Always showing*. Today's dated plats appear first in the carousel, evergreen ones after.
+Every plat belongs to a day — that is what makes it a plat du jour. There is no permanent or
+undated kind; for dishes that are always available, use the **Dishes** tab instead.
 
 Weeks run Monday–Sunday, and dates are the restaurant's own local calendar days.
 
@@ -138,11 +138,39 @@ Local-mode edits live in one browser and do **not** migrate. The menu comes in v
 | `src/lib/whatsapp.js` | Builds the order message and the `wa.me` link |
 | `src/admin/AdminApp.jsx` | The admin panel — login, tabs, editors |
 | `src/admin/ui.jsx` | Shared form controls for the panel |
+| `src/components/PrintMenu.jsx` | The A4 carte — cover, categories, dish grid |
 | `src/lib/week.js` | Local-time date helpers for the week planner |
 | `supabase/schema.sql` | Tables, row-level security, storage bucket |
 | `supabase/add-service-date.sql` | Migration adding plat du jour scheduling |
+| `supabase/require-service-date.sql` | Migration making the serving day mandatory |
 | `src/index.css` | Resets, CSS variables (colors/fonts), keyframes |
 | `index.html` | Google Fonts (Cormorant Garamond + Manrope), viewport, theme color |
+
+## Export the menu as A4
+
+**Staff only.** Sign in at `#/admin` and hit the **A4** button in the bottom bar, next to *Add*.
+It opens the browser print dialog — print it, or choose *Save as PDF* for something you can email
+or hand to a printer. Guests never see it, and never download the code for it either: the
+document lives in the lazy-loaded admin chunk.
+
+The printed carte is a separate document ([`src/components/PrintMenu.jsx`](src/components/PrintMenu.jsx)
+plus the `@media print` block in `src/index.css`), not the screen menu squeezed onto paper:
+
+- A cover sheet with the harbour photo, the wordmark and the founder
+- Numbered category headers with the category photo and Arabic name
+- Dishes three across with their photos, dotted leaders to the price
+- Categories with no photos fall back to a single-column classic carte, which reads better
+  than a grid of empty boxes
+
+Nothing in it depends on CSS backgrounds, because Chrome's print dialog ships with **Background
+graphics** unchecked and silently drops them. Structure comes from rules, borders and photos, so
+it prints correctly either way.
+
+**Plat du jour is deliberately left out** — it changes every day, so a printed sheet would be
+wrong by tomorrow.
+
+The document is only built while you are exporting, and it waits for every photo to load before
+the dialog opens, so nothing prints blank.
 
 ## The header photo
 

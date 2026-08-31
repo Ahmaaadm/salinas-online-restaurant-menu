@@ -191,7 +191,7 @@ function OrderSheet({ lines, total, countLabel, onClose, onBump, onClear }) {
 
 function Shell({ children }) {
   return (
-    <div style={{ width: '100%', maxWidth: 430, margin: '0 auto', minHeight: '100vh', background: '#f7fbfc', position: 'relative', overflow: 'hidden', paddingBottom: 120, boxShadow: '0 0 60px rgba(11,45,62,.10)' }}>
+    <div className="screen-only" style={{ width: '100%', maxWidth: 430, margin: '0 auto', minHeight: '100vh', background: '#f7fbfc', position: 'relative', overflow: 'hidden', paddingBottom: 120, boxShadow: '0 0 60px rgba(11,45,62,.10)' }}>
       {children}
     </div>
   );
@@ -299,6 +299,7 @@ export default function App() {
       <div style={{ padding: '34px 22px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
         <div style={{ width: 34, height: 1, background: 'rgba(11,45,62,.18)' }} />
         <div style={{ font: "italic 400 16px/1.4 'Cormorant Garamond',serif", color: '#7b98a8', textAlign: 'center' }}>Prices in FCFA. Catch of the day may vary.</div>
+
         <a href="#/admin" style={{ marginTop: 6, font: '500 10.5px/1 Manrope,sans-serif', letterSpacing: '.18em', textTransform: 'uppercase', color: '#a9bec9' }}>Staff</a>
       </div>
 
