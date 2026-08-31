@@ -23,22 +23,50 @@ function Thumb({ image, slot, size, radius, ring }) {
   );
 }
 
+/* Drop the harbour photo at public/header.jpg. It is served as a plain file
+   rather than imported, so a missing photo degrades to the navy gradient
+   instead of breaking the build. */
 function Header() {
+  const [photo, setPhoto] = useState(true);
+
   return (
-    <header style={{ position: 'relative', padding: '34px 22px 26px', background: 'linear-gradient(168deg,#0b2f42 0%,#12455e 58%,#17607f 100%)', color: '#fff', overflow: 'hidden' }}>
-      <div style={{ position: 'absolute', inset: 0, opacity: 0.2, background: 'repeating-linear-gradient(115deg,rgba(255,255,255,.55) 0 1px,transparent 1px 26px)' }} />
-      <div style={{ position: 'absolute', right: -70, top: -90, width: 230, height: 230, borderRadius: '50%', border: '1px solid rgba(255,255,255,.22)' }} />
-      <div style={{ position: 'absolute', right: -30, top: -40, width: 130, height: 130, borderRadius: '50%', border: '1px solid rgba(255,255,255,.14)' }} />
-      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', textAlign: 'center' }}>
-        <div style={{ font: '500 11px/1 Manrope,sans-serif', letterSpacing: '.34em', textTransform: 'uppercase', color: 'rgba(198,230,244,.85)' }}>Est. Beirut · Fresh Catch Daily</div>
-        <div style={{ font: "400 54px/.9 'Cormorant Garamond',serif", letterSpacing: '.16em', paddingLeft: '.16em' }}>SALINAS</div>
+    <header style={{ position: 'relative', padding: '34px 22px 30px', background: 'linear-gradient(168deg,#0b2f42 0%,#12455e 58%,#17607f 100%)', color: '#fff', overflow: 'hidden' }}>
+      {photo && (
+        <img src="/header.jpg" alt="" aria-hidden="true" onError={() => setPhoto(false)}
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+      )}
+
+      {/* Scrim: the photo is busy and bright, the wordmark has to stay readable. */}
+      <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg,rgba(8,36,51,.74) 0%,rgba(9,40,56,.46) 42%,rgba(7,30,43,.90) 100%)' }} />
+
+      {/* Stripes and rings dress up the flat gradient; over a photograph they
+          only add noise, so they appear only in the no-photo fallback. */}
+      {!photo && (
+        <>
+          <div style={{ position: 'absolute', inset: 0, opacity: 0.2, background: 'repeating-linear-gradient(115deg,rgba(255,255,255,.55) 0 1px,transparent 1px 26px)' }} />
+          <div style={{ position: 'absolute', right: -70, top: -90, width: 230, height: 230, borderRadius: '50%', border: '1px solid rgba(255,255,255,.22)' }} />
+          <div style={{ position: 'absolute', right: -30, top: -40, width: 130, height: 130, borderRadius: '50%', border: '1px solid rgba(255,255,255,.14)' }} />
+        </>
+      )}
+
+      <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 13, alignItems: 'center', textAlign: 'center' }}>
+        <div style={{ font: '500 11px/1 Manrope,sans-serif', letterSpacing: '.3em', textTransform: 'uppercase', color: 'rgba(198,230,244,.9)', textShadow: '0 1px 8px rgba(4,20,29,.7)' }}>From Tyre to San Pedro</div>
+
+        <div style={{ font: "400 54px/.9 'Cormorant Garamond',serif", letterSpacing: '.16em', paddingLeft: '.16em', textShadow: '0 2px 18px rgba(4,20,29,.7)' }}>SALINAS</div>
+
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', maxWidth: 290 }}>
           <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,transparent,rgba(255,255,255,.45))' }} />
           <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#7fd0f0' }} />
           <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,rgba(255,255,255,.45),transparent)' }} />
         </div>
-        <div style={{ font: "italic 400 19px/1.3 'Cormorant Garamond',serif", color: '#dff0f8' }}>Chef de la Mer — Abo Mazloum</div>
-        <div style={{ font: '400 15px/1.4 Manrope,sans-serif', color: 'rgba(198,230,244,.72)', direction: 'rtl' }}>صالينا · مطعم الأسماك</div>
+
+        {/* The founder carries the same weight as the house name. */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 7, alignItems: 'center' }}>
+          <div style={{ font: '500 10px/1 Manrope,sans-serif', letterSpacing: '.3em', textTransform: 'uppercase', color: 'rgba(198,230,244,.8)', textShadow: '0 1px 8px rgba(4,20,29,.7)' }}>Chef de la Mer</div>
+          {/* 11 characters against SALINAS's 7 — sized by viewport so it fills
+              the line on a 430px screen without wrapping on a 360px one. */}
+          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontWeight: 400, fontSize: 'min(10.4vw, 46px)', lineHeight: .92, whiteSpace: 'nowrap', letterSpacing: '.05em', paddingLeft: '.05em', color: '#fff', textShadow: '0 2px 18px rgba(4,20,29,.7)' }}>ABO MAZLOUM</div>
+        </div>
       </div>
     </header>
   );

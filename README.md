@@ -144,6 +144,14 @@ Local-mode edits live in one browser and do **not** migrate. The menu comes in v
 | `src/index.css` | Resets, CSS variables (colors/fonts), keyframes |
 | `index.html` | Google Fonts (Cormorant Garamond + Manrope), viewport, theme color |
 
+## The header photo
+
+Save the harbour photo as **`public/header.jpg`** and it becomes the header background
+automatically — no import, no rebuild step, no code change. Landscape crops work best; the
+image is covered and centred, and a navy scrim keeps the wordmark readable over it.
+
+If the file is missing the header falls back to the navy gradient, so nothing breaks.
+
 ## Adding real photos
 
 Upload them from the admin panel — that is the whole workflow now. Any dish, category, or
