@@ -5,21 +5,33 @@ import { money } from './lib/money.js';
 import { whatsappNumber, whatsappUrl } from './lib/whatsapp.js';
 import { todayISO } from './lib/week.js';
 
-const ACCENT = '#2b7fa8';
+const ACCENT = 'var(--accent)';
 
 /* Striped placeholder used until a real photo URL is set in menuData.js */
 function Thumb({ image, slot, size, radius, ring }) {
   return (
-    <div style={{ position: 'relative', flex: 'none', width: size, height: size, borderRadius: radius, overflow: 'hidden', background: '#e4eef3', border: `1px solid ${ring}` }}>
+    <div style={{ position: 'relative', flex: 'none', width: size, height: size, borderRadius: radius, overflow: 'hidden', background: 'var(--thumb-bg)', border: `1px solid ${ring}` }}>
       {image ? (
         <img src={image} alt={slot} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
       ) : (
         <>
-          <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg,#dbe9f0 0 6px,#eef5f8 6px 12px)' }} />
-          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', font: '400 7.5px/1.25 ui-monospace,Menlo,monospace', color: '#7d99a8', padding: 4, letterSpacing: '.04em' }}>{slot}</div>
+          <div style={{ position: 'absolute', inset: 0, background: 'repeating-linear-gradient(135deg,var(--thumb-stripe-a) 0 6px,var(--thumb-stripe-b) 6px 12px)' }} />
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center', font: '400 7.5px/1.25 ui-monospace,Menlo,monospace', color: 'var(--thumb-label)', padding: 4, letterSpacing: '.04em' }}>{slot}</div>
         </>
       )}
     </div>
+  );
+}
+
+/* Waves are the client's ask made structural: they mark where a coloured band
+   ends instead of a hard horizontal edge. Pure SVG, so they take the theme's
+   colours and cost nothing to load. */
+function Wave({ fill = 'var(--page)', flip = false, height = 22 }) {
+  return (
+    <svg viewBox="0 0 1440 90" preserveAspectRatio="none" aria-hidden="true"
+      style={{ display: 'block', width: '100%', height, transform: flip ? 'scaleY(-1)' : 'none' }}>
+      <path fill={fill} d="M0,45 C120,80 240,80 360,60 C480,40 600,0 720,5 C840,10 960,60 1080,70 C1200,80 1320,55 1440,35 L1440,90 L0,90 Z" />
+    </svg>
   );
 }
 
@@ -30,7 +42,7 @@ function Header() {
   const [photo, setPhoto] = useState(true);
 
   return (
-    <header style={{ position: 'relative', padding: '34px 22px 30px', background: 'linear-gradient(168deg,#0b2f42 0%,#12455e 58%,#17607f 100%)', color: '#fff', overflow: 'hidden' }}>
+    <header style={{ position: 'relative', padding: '34px 22px 30px', background: 'linear-gradient(168deg,var(--deep) 0%,var(--deep-2) 58%,var(--deep-3) 100%)', color: 'var(--on-deep)', overflow: 'hidden' }}>
       {photo && (
         <img src="/header.jpg" alt="" aria-hidden="true" onError={() => setPhoto(false)}
           style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -50,23 +62,27 @@ function Header() {
       )}
 
       <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: 13, alignItems: 'center', textAlign: 'center' }}>
-        <div style={{ font: '500 11px/1 Manrope,sans-serif', letterSpacing: '.3em', textTransform: 'uppercase', color: 'rgba(198,230,244,.9)', textShadow: '0 1px 8px rgba(4,20,29,.7)' }}>From Tyre to San Pedro</div>
+        <div style={{ font: '500 11px/1 Manrope,sans-serif', letterSpacing: '.3em', textTransform: 'uppercase', color: 'var(--on-deep-muted)', textShadow: '0 1px 8px rgba(4,20,29,.7)' }}>From Tyre to San Pedro</div>
 
         <div style={{ font: "400 54px/.9 'Cormorant Garamond',serif", letterSpacing: '.16em', paddingLeft: '.16em', textShadow: '0 2px 18px rgba(4,20,29,.7)' }}>SALINAS</div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '100%', maxWidth: 290 }}>
           <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,transparent,rgba(255,255,255,.45))' }} />
-          <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#7fd0f0' }} />
+          <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--sky)' }} />
           <div style={{ flex: 1, height: 1, background: 'linear-gradient(90deg,rgba(255,255,255,.45),transparent)' }} />
         </div>
 
         {/* The founder carries the same weight as the house name. */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 7, alignItems: 'center' }}>
-          <div style={{ font: '500 10px/1 Manrope,sans-serif', letterSpacing: '.3em', textTransform: 'uppercase', color: 'rgba(198,230,244,.8)', textShadow: '0 1px 8px rgba(4,20,29,.7)' }}>Chef de la Mer</div>
+          <div style={{ font: '500 10px/1 Manrope,sans-serif', letterSpacing: '.3em', textTransform: 'uppercase', color: 'var(--on-deep-muted)', textShadow: '0 1px 8px rgba(4,20,29,.7)' }}>Chef de la Mer</div>
           {/* 11 characters against SALINAS's 7 — sized by viewport so it fills
               the line on a 430px screen without wrapping on a 360px one. */}
-          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontWeight: 400, fontSize: 'min(10.4vw, 46px)', lineHeight: .92, whiteSpace: 'nowrap', letterSpacing: '.05em', paddingLeft: '.05em', color: '#fff', textShadow: '0 2px 18px rgba(4,20,29,.7)' }}>ABO MAZLOUM</div>
+          <div style={{ fontFamily: "'Cormorant Garamond',serif", fontWeight: 400, fontSize: 'min(10.4vw, 46px)', lineHeight: .92, whiteSpace: 'nowrap', letterSpacing: '.05em', paddingLeft: '.05em', color: 'var(--on-deep)', textShadow: '0 2px 18px rgba(4,20,29,.7)' }}>ABO MAZLOUM</div>
         </div>
+      </div>
+
+      <div style={{ position: 'absolute', left: 0, right: 0, bottom: -1 }}>
+        <Wave fill="var(--tint)" height={20} />
       </div>
     </header>
   );
@@ -74,15 +90,15 @@ function Header() {
 
 function CategoryRail({ cats, active, onPick }) {
   return (
-    <nav style={{ position: 'sticky', top: 0, zIndex: 30, background: 'rgba(247,251,252,.94)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(11,45,62,.08)' }}>
+    <nav style={{ position: 'sticky', top: 0, zIndex: 30, background: 'var(--page-blur)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--line-soft)' }}>
       <div className="no-scrollbar" style={{ display: 'flex', gap: 10, overflowX: 'auto', padding: '12px 16px' }}>
         {cats.map(c => {
           const on = c.id === active;
           return (
             <button key={c.id} type="button" onClick={() => onPick(c.id)}
-              style={{ flex: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, width: 78, padding: '8px 4px 9px', borderRadius: 16, transition: 'all .18s ease', border: `1px solid ${on ? ACCENT : 'rgba(11,45,62,.12)'}`, background: on ? ACCENT : '#fff', boxShadow: on ? '0 6px 16px rgba(43,127,168,.22)' : '0 1px 2px rgba(11,45,62,.05)' }}>
-              <Thumb image={c.image_url} slot={c.slot} size={46} radius={23} ring={on ? 'rgba(255,255,255,.55)' : 'rgba(11,45,62,.08)'} />
-              <span style={{ font: '600 10.5px/1.15 Manrope,sans-serif', letterSpacing: '.02em', textAlign: 'center', color: on ? '#fff' : '#4b7085' }}>{c.name}</span>
+              style={{ flex: 'none', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 7, width: 78, padding: '8px 4px 9px', borderRadius: 16, transition: 'all .18s ease', border: `1px solid ${on ? ACCENT : 'var(--line)'}`, background: on ? ACCENT : 'var(--surface)', boxShadow: on ? '0 6px 16px var(--shadow-accent)' : '0 1px 2px var(--line-soft)' }}>
+              <Thumb image={c.image_url} slot={c.slot} size={46} radius={23} ring={on ? 'rgba(255,255,255,.55)' : 'var(--line-soft)'} />
+              <span style={{ font: '600 10.5px/1.15 Manrope,sans-serif', letterSpacing: '.02em', textAlign: 'center', color: on ? 'var(--accent-on-fill)' : 'var(--ink-muted)' }}>{c.name}</span>
             </button>
           );
         })}
@@ -94,18 +110,18 @@ function CategoryRail({ cats, active, onPick }) {
 function DishRow({ item, qty, onAdd }) {
   return (
     <div role="button" tabIndex={0} onClick={onAdd} onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && onAdd()}
-      style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '16px 4px', borderBottom: '1px solid rgba(11,45,62,.07)', cursor: 'pointer', borderRadius: 12, background: qty > 0 ? 'rgba(63,157,201,.07)' : 'transparent', transition: 'background .16s ease' }}>
-      <Thumb image={item.image_url} slot={item.slot} size={74} radius={16} ring="rgba(11,45,62,.08)" />
+      style={{ display: 'flex', gap: 14, alignItems: 'flex-start', padding: '14px 13px', marginBottom: 9, border: '1px solid var(--card-line)', cursor: 'pointer', borderRadius: 16, background: qty > 0 ? 'var(--tap)' : 'var(--card)', transition: 'background .16s ease' }}>
+      <Thumb image={item.image_url} slot={item.slot} size={74} radius={16} ring="var(--line-soft)" />
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
-        <div style={{ font: '600 15.5px/1.25 Manrope,sans-serif', color: '#0b2f42' }}>{item.name}</div>
-        <div style={{ font: '400 12.5px/1.45 Manrope,sans-serif', color: '#7b98a8', direction: 'rtl', textAlign: 'right' }}>{item.arabic}</div>
+        <div style={{ font: '600 15.5px/1.25 Manrope,sans-serif', color: 'var(--ink)' }}>{item.name}</div>
+        <div style={{ font: '400 12.5px/1.45 Manrope,sans-serif', color: 'var(--ink-muted)', direction: 'rtl', textAlign: 'right' }}>{item.arabic}</div>
         <div style={{ font: '600 14px/1 Manrope,sans-serif', color: ACCENT, marginTop: 2 }}>{money(item.price)}</div>
       </div>
       <div style={{ flex: 'none', alignSelf: 'center' }}>
         {qty > 0 ? (
-          <div style={{ minWidth: 30, height: 30, padding: '0 9px', borderRadius: 15, background: '#0b2f42', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 13px/1 Manrope,sans-serif', animation: 'salPop .22s ease-out' }}>{qty}</div>
+          <div style={{ minWidth: 30, height: 30, padding: '0 9px', borderRadius: 15, background: 'var(--deep)', color: 'var(--on-deep)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '700 13px/1 Manrope,sans-serif', animation: 'salPop .22s ease-out' }}>{qty}</div>
         ) : (
-          <div style={{ width: 30, height: 30, borderRadius: 15, border: '1px solid rgba(11,45,62,.16)', color: '#3f9dc9', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '400 20px/1 Manrope,sans-serif', paddingBottom: 2 }}>+</div>
+          <div style={{ width: 30, height: 30, borderRadius: 15, border: '1px solid var(--line-strong)', color: 'var(--accent-soft)', display: 'flex', alignItems: 'center', justifyContent: 'center', font: '400 20px/1 Manrope,sans-serif', paddingBottom: 2 }}>+</div>
         )}
       </div>
     </div>
@@ -127,48 +143,48 @@ function OrderSheet({ lines, total, countLabel, onClose, onBump, onClear }) {
 
   return (
     <div style={{ position: 'fixed', inset: 0, zIndex: 70, display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
-      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(6,26,36,.5)' }} />
-      <div style={{ position: 'relative', width: '100%', maxWidth: 430, maxHeight: '86vh', background: '#f7fbfc', borderRadius: '24px 24px 0 0', animation: 'salSheet .28s cubic-bezier(.2,.8,.2,1)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <div style={{ padding: '18px 22px 14px', background: '#0b2f42', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+      <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'var(--scrim)' }} />
+      <div style={{ position: 'relative', width: '100%', maxWidth: 430, maxHeight: '86vh', background: 'var(--page)', borderRadius: '24px 24px 0 0', animation: 'salSheet .28s cubic-bezier(.2,.8,.2,1)', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{ padding: '18px 22px 14px', background: 'var(--deep)', color: 'var(--on-deep)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
             <div style={{ font: "400 24px/1 'Cormorant Garamond',serif", letterSpacing: '.06em' }}>Your Order</div>
-            <div style={{ font: '400 12px/1 Manrope,sans-serif', color: 'rgba(198,230,244,.7)' }}>{countLabel}</div>
+            <div style={{ font: '400 12px/1 Manrope,sans-serif', color: 'var(--on-deep-faint)' }}>{countLabel}</div>
           </div>
-          <button type="button" onClick={onClose} aria-label="Close" style={{ width: 34, height: 34, borderRadius: 17, border: '1px solid rgba(255,255,255,.25)', background: 'transparent', color: '#fff', font: '400 17px/1 Manrope,sans-serif', cursor: 'pointer' }}>×</button>
+          <button type="button" onClick={onClose} aria-label="Close" style={{ width: 34, height: 34, borderRadius: 17, border: '1px solid var(--line-on-deep)', background: 'transparent', color: 'var(--on-deep)', font: '400 17px/1 Manrope,sans-serif', cursor: 'pointer' }}>×</button>
         </div>
         <div style={{ flex: 1, overflowY: 'auto', padding: '8px 18px 4px' }}>
           {lines.length === 0 ? (
             <div style={{ padding: '52px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
-              <div style={{ width: 44, height: 44, borderRadius: 22, border: '1px dashed rgba(11,45,62,.25)' }} />
-              <div style={{ font: "italic 400 18px/1.3 'Cormorant Garamond',serif", color: '#7b98a8' }}>Nothing selected yet</div>
-              <div style={{ font: '400 13px/1.4 Manrope,sans-serif', color: '#a9bec9' }}>Tap any dish on the menu to add it here.</div>
+              <div style={{ width: 44, height: 44, borderRadius: 22, border: '1px dashed var(--line-strong)' }} />
+              <div style={{ font: "italic 400 18px/1.3 'Cormorant Garamond',serif", color: 'var(--ink-muted)' }}>Nothing selected yet</div>
+              <div style={{ font: '400 13px/1.4 Manrope,sans-serif', color: 'var(--ink-faint)' }}>Tap any dish on the menu to add it here.</div>
             </div>
           ) : lines.map(l => (
-            <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 4px', borderBottom: '1px solid rgba(11,45,62,.08)' }}>
+            <div key={l.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 4px', borderBottom: '1px solid var(--line-soft)' }}>
               <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
-                <div style={{ font: '600 14.5px/1.25 Manrope,sans-serif', color: '#0b2f42' }}>{l.name}</div>
-                <div style={{ font: '400 12px/1 Manrope,sans-serif', color: '#8ea9b8' }}>{money(l.price)} each</div>
+                <div style={{ font: '600 14.5px/1.25 Manrope,sans-serif', color: 'var(--ink)' }}>{l.name}</div>
+                <div style={{ font: '400 12px/1 Manrope,sans-serif', color: 'var(--ink-soft)' }}>{money(l.price)} each</div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: '#e9f3f8', borderRadius: 18, padding: '4px 6px' }}>
-                <button type="button" onClick={() => onBump(l.id, -1)} style={{ width: 26, height: 26, borderRadius: 13, border: 'none', background: '#fff', color: '#0b2f42', font: '600 15px/1 Manrope,sans-serif', cursor: 'pointer' }}>−</button>
-                <div style={{ minWidth: 16, textAlign: 'center', font: '700 13px/1 Manrope,sans-serif', color: '#0b2f42' }}>{l.qty}</div>
-                <button type="button" onClick={() => onBump(l.id, 1)} style={{ width: 26, height: 26, borderRadius: 13, border: 'none', background: '#0b2f42', color: '#fff', font: '600 15px/1 Manrope,sans-serif', cursor: 'pointer' }}>+</button>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, background: 'var(--tint)', borderRadius: 18, padding: '4px 6px' }}>
+                <button type="button" onClick={() => onBump(l.id, -1)} style={{ width: 26, height: 26, borderRadius: 13, border: 'none', background: 'var(--surface)', color: 'var(--ink)', font: '600 15px/1 Manrope,sans-serif', cursor: 'pointer' }}>−</button>
+                <div style={{ minWidth: 16, textAlign: 'center', font: '700 13px/1 Manrope,sans-serif', color: 'var(--ink)' }}>{l.qty}</div>
+                <button type="button" onClick={() => onBump(l.id, 1)} style={{ width: 26, height: 26, borderRadius: 13, border: 'none', background: 'var(--deep)', color: 'var(--on-deep)', font: '600 15px/1 Manrope,sans-serif', cursor: 'pointer' }}>+</button>
               </div>
               <div style={{ width: 96, textAlign: 'right', font: '600 13.5px/1.2 Manrope,sans-serif', color: ACCENT }}>{money(l.price * l.qty)}</div>
             </div>
           ))}
         </div>
-        <div style={{ padding: '16px 22px 24px', borderTop: '1px solid rgba(11,45,62,.10)', background: '#fff', display: 'flex', flexDirection: 'column', gap: 12 }}>
+        <div style={{ padding: '16px 22px 24px', borderTop: '1px solid var(--line)', background: 'var(--surface)', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-            <div style={{ font: '500 11px/1 Manrope,sans-serif', letterSpacing: '.18em', textTransform: 'uppercase', color: '#8ea9b8' }}>Total</div>
-            <div style={{ font: '700 24px/1 Manrope,sans-serif', color: '#0b2f42' }}>{money(total)}</div>
+            <div style={{ font: '500 11px/1 Manrope,sans-serif', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-soft)' }}>Total</div>
+            <div style={{ font: '700 24px/1 Manrope,sans-serif', color: 'var(--ink)' }}>{money(total)}</div>
           </div>
 
           {lines.length > 0 && whatsappNumber && (
             <>
               <input value={note} onChange={e => setNote(e.target.value)} maxLength={60}
                 placeholder="Your name or table number (optional)"
-                style={{ width: '100%', padding: '11px 13px', borderRadius: 13, border: '1px solid rgba(11,45,62,.14)', background: '#f7fbfc', color: '#0b2f42', font: '500 13px/1.2 Manrope,sans-serif' }} />
+                style={{ width: '100%', padding: '11px 13px', borderRadius: 13, border: '1px solid var(--line-strong)', background: 'var(--page)', color: 'var(--ink)', font: '500 13px/1.2 Manrope,sans-serif' }} />
 
               <a href={href} target="_blank" rel="noopener noreferrer"
                 style={{ width: '100%', padding: 15, borderRadius: 14, background: '#25D366', color: '#0a3622', font: '700 14.5px/1 Manrope,sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 9, boxShadow: '0 8px 20px rgba(37,211,102,.32)' }}>
@@ -176,13 +192,13 @@ function OrderSheet({ lines, total, countLabel, onClose, onBump, onClear }) {
                 Send order on WhatsApp
               </a>
 
-              <div style={{ font: '400 11px/1.5 Manrope,sans-serif', color: '#a9bec9', textAlign: 'center' }}>
+              <div style={{ font: '400 11px/1.5 Manrope,sans-serif', color: 'var(--ink-faint)', textAlign: 'center' }}>
                 Opens WhatsApp with your order written out — you still press send. No payment here.
               </div>
             </>
           )}
 
-          <button type="button" onClick={onClear} style={{ width: '100%', padding: 13, borderRadius: 14, border: '1px solid rgba(11,45,62,.14)', background: 'transparent', color: '#5d7d8e', font: '600 13px/1 Manrope,sans-serif', cursor: 'pointer' }}>Clear selection</button>
+          <button type="button" onClick={onClear} style={{ width: '100%', padding: 13, borderRadius: 14, border: '1px solid var(--line-strong)', background: 'transparent', color: 'var(--ink-muted)', font: '600 13px/1 Manrope,sans-serif', cursor: 'pointer' }}>Clear selection</button>
         </div>
       </div>
     </div>
@@ -191,7 +207,7 @@ function OrderSheet({ lines, total, countLabel, onClose, onBump, onClear }) {
 
 function Shell({ children }) {
   return (
-    <div className="screen-only" style={{ width: '100%', maxWidth: 430, margin: '0 auto', minHeight: '100vh', background: '#f7fbfc', position: 'relative', overflow: 'hidden', paddingBottom: 120, boxShadow: '0 0 60px rgba(11,45,62,.10)' }}>
+    <div className="screen-only" style={{ width: '100%', maxWidth: 430, margin: '0 auto', minHeight: '100vh', background: 'var(--page)', position: 'relative', overflow: 'hidden', paddingBottom: 120, boxShadow: '0 0 60px var(--line)' }}>
       {children}
     </div>
   );
@@ -200,9 +216,9 @@ function Shell({ children }) {
 function Notice({ title, detail }) {
   return (
     <div style={{ padding: '80px 30px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, textAlign: 'center' }}>
-      <div style={{ width: 26, height: 26, borderRadius: 13, border: '2px solid rgba(11,45,62,.12)', borderTopColor: ACCENT, animation: 'salSpin .9s linear infinite' }} />
-      <div style={{ font: "italic 400 18px/1.3 'Cormorant Garamond',serif", color: '#7b98a8' }}>{title}</div>
-      {detail && <div style={{ font: '400 12.5px/1.5 Manrope,sans-serif', color: '#a9bec9' }}>{detail}</div>}
+      <div style={{ width: 26, height: 26, borderRadius: 13, border: '2px solid var(--line)', borderTopColor: ACCENT, animation: 'salSpin .9s linear infinite' }} />
+      <div style={{ font: "italic 400 18px/1.3 'Cormorant Garamond',serif", color: 'var(--ink-muted)' }}>{title}</div>
+      {detail && <div style={{ font: '400 12.5px/1.5 Manrope,sans-serif', color: 'var(--ink-faint)' }}>{detail}</div>}
     </div>
   );
 }
@@ -268,9 +284,9 @@ export default function App() {
     <Shell>
       <Header />
 
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '11px 22px', background: '#e9f3f8', borderBottom: '1px solid rgba(11,45,62,.07)' }}>
-        <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#3f9dc9' }} />
-        <div style={{ font: '500 11.5px/1 Manrope,sans-serif', letterSpacing: '.1em', textTransform: 'uppercase', color: '#3d6e87' }}>Online menu · tap a dish to add</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '14px 22px 11px', background: 'var(--tint)', borderBottom: '1px solid var(--line-soft)' }}>
+        <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--accent-soft)' }} />
+        <div style={{ font: '500 11.5px/1 Manrope,sans-serif', letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--accent)' }}>Online menu · tap a dish to add</div>
       </div>
 
       <PlatDuJour specials={specials} cart={cart} onAdd={add} />
@@ -279,12 +295,12 @@ export default function App() {
 
       {groups.map(g => (
         <section key={g.id} style={{ padding: '28px 18px 4px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, padding: '0 4px 14px', borderBottom: '1px solid rgba(11,45,62,.10)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, padding: '0 4px 14px', borderBottom: '1px solid var(--line)' }}>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <h2 style={{ margin: 0, font: "400 27px/1 'Cormorant Garamond',serif", color: '#0b2f42', letterSpacing: '.02em' }}>{g.name}</h2>
-              <div style={{ font: '400 13px/1.3 Manrope,sans-serif', color: '#7b98a8', direction: 'rtl' }}>{g.arabic}</div>
+              <h2 style={{ margin: 0, font: "400 27px/1 'Cormorant Garamond',serif", color: 'var(--ink)', letterSpacing: '.02em' }}>{g.name}</h2>
+              <div style={{ font: '400 13px/1.3 Manrope,sans-serif', color: 'var(--ink-muted)', direction: 'rtl' }}>{g.arabic}</div>
             </div>
-            <div style={{ font: '500 10.5px/1 Manrope,sans-serif', letterSpacing: '.18em', textTransform: 'uppercase', color: '#a9bec9', paddingBottom: 4 }}>{g.items.length} dishes</div>
+            <div style={{ font: '500 10.5px/1 Manrope,sans-serif', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-faint)', paddingBottom: 4 }}>{g.items.length} dishes</div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {g.items.map(it => <DishRow key={it.id} item={it} qty={cart[it.id] || 0} onAdd={() => add(it)} />)}
@@ -297,24 +313,24 @@ export default function App() {
       )}
 
       <div style={{ padding: '34px 22px 10px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-        <div style={{ width: 34, height: 1, background: 'rgba(11,45,62,.18)' }} />
-        <div style={{ font: "italic 400 16px/1.4 'Cormorant Garamond',serif", color: '#7b98a8', textAlign: 'center' }}>Prices in FCFA. Catch of the day may vary.</div>
+        <div style={{ width: 34, height: 1, background: 'var(--line-strong)' }} />
+        <div style={{ font: "italic 400 16px/1.4 'Cormorant Garamond',serif", color: 'var(--ink-muted)', textAlign: 'center' }}>Prices in FCFA. Catch of the day may vary.</div>
 
-        <a href="#/admin" style={{ marginTop: 6, font: '500 10.5px/1 Manrope,sans-serif', letterSpacing: '.18em', textTransform: 'uppercase', color: '#a9bec9' }}>Staff</a>
+        <a href="#/admin" style={{ marginTop: 6, font: '500 10.5px/1 Manrope,sans-serif', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-faint)' }}>Staff</a>
       </div>
 
       {toast && (
-        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 96, zIndex: 60, padding: '11px 18px', borderRadius: 24, background: '#0b2f42', color: '#fff', font: '600 13px/1 Manrope,sans-serif', boxShadow: '0 12px 30px rgba(11,45,62,.32)', animation: 'salUp .22s ease-out', whiteSpace: 'nowrap' }}>{toast}</div>
+        <div style={{ position: 'fixed', left: '50%', transform: 'translateX(-50%)', bottom: 96, zIndex: 60, padding: '11px 18px', borderRadius: 24, background: 'var(--deep)', color: 'var(--on-deep)', font: '600 13px/1 Manrope,sans-serif', boxShadow: '0 12px 30px rgba(11,45,62,.32)', animation: 'salUp .22s ease-out', whiteSpace: 'nowrap' }}>{toast}</div>
       )}
 
       <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 50, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-        <div style={{ width: '100%', maxWidth: 430, pointerEvents: 'auto', background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(14px)', borderTop: '1px solid rgba(11,45,62,.10)', padding: '12px 16px 18px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 -8px 28px rgba(11,45,62,.10)' }}>
+        <div style={{ width: '100%', maxWidth: 430, pointerEvents: 'auto', background: 'var(--surface-blur)', backdropFilter: 'blur(14px)', borderTop: '1px solid var(--line)', padding: '12px 16px 18px', display: 'flex', alignItems: 'center', gap: 12, boxShadow: '0 -8px 28px var(--line)' }}>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 3 }}>
-            <div style={{ font: '500 10.5px/1 Manrope,sans-serif', letterSpacing: '.16em', textTransform: 'uppercase', color: '#8ea9b8' }}>{countLabel}</div>
-            <div style={{ font: '700 21px/1 Manrope,sans-serif', color: '#0b2f42' }}>{money(total)}</div>
+            <div style={{ font: '500 10.5px/1 Manrope,sans-serif', letterSpacing: '.16em', textTransform: 'uppercase', color: 'var(--ink-soft)' }}>{countLabel}</div>
+            <div style={{ font: '700 21px/1 Manrope,sans-serif', color: 'var(--ink)' }}>{money(total)}</div>
           </div>
           <button type="button" onClick={() => setSheetOpen(true)}
-            style={{ flex: 'none', padding: '14px 26px', borderRadius: 15, border: 'none', cursor: 'pointer', font: '700 14px/1 Manrope,sans-serif', letterSpacing: '.03em', transition: 'all .2s ease', background: count ? ACCENT : 'rgba(11,45,62,.12)', color: count ? '#fff' : '#7b98a8', boxShadow: count ? '0 8px 20px rgba(43,127,168,.30)' : 'none' }}>View Order</button>
+            style={{ flex: 'none', padding: '14px 26px', borderRadius: 15, border: 'none', cursor: 'pointer', font: '700 14px/1 Manrope,sans-serif', letterSpacing: '.03em', transition: 'all .2s ease', background: count ? ACCENT : 'var(--line)', color: count ? 'var(--accent-on-fill)' : 'var(--ink-muted)', boxShadow: count ? '0 8px 20px var(--shadow-accent)' : 'none' }}>View Order</button>
         </div>
       </div>
 

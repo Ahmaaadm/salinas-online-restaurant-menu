@@ -1,17 +1,58 @@
 :root {
-  --navy: #0b2f42;
-  --navy-2: #12455e;
-  --navy-3: #17607f;
-  --accent: #2b7fa8;
-  --accent-soft: #3f9dc9;
-  --sky: #7fd0f0;
-  --page: #f7fbfc;
-  --tint: #e9f3f8;
-  --ink-muted: #7b98a8;
-  --ink-faint: #a9bec9;
-  --line: rgba(11, 45, 62, 0.08);
+  /* Ocean — the restaurant's chosen palette. Sky blue throughout with white
+     type; the ground is deep enough that body text clears 4.5:1.
+
+     Colours are role tokens, never raw hex in JSX, so a repaint is this block
+     alone. Print pins its own values below — see the @media print rules. */
+
+  --page: #0e5a7a;
+  --surface: #15688b;
+  --tint: #0b4a66;
+  --deep: #08394f;
+  --deep-2: #0d5273;
+  --deep-3: #14709a;
+  --deep-4: #0b4a66;
+
+  --ink: #ffffff;
+  --ink-muted: #a9dcf1;
+  --ink-faint: #7cbcd6;
+  --on-deep: #ffffff;
+  --on-deep-muted: rgba(205, 238, 252, .92);
+  --on-deep-faint: rgba(205, 238, 252, .72);
+
+  --accent: #7fd0f0;
+  --accent-soft: #a5e2f7;
+  --sky: #cdeefc;
+  --accent-ink: #06364a;    /* dark type on the light accent fill */
+
+  --line: rgba(255, 255, 255, .18);
+  --line-soft: rgba(255, 255, 255, .11);
+  --line-strong: rgba(255, 255, 255, .30);
+  --line-on-deep: rgba(255, 255, 255, .28);
+
+  --ink-soft: #8fc9e0;
+  --thumb-bg: #0b4a66;
+  --thumb-stripe-a: #0d5273;
+  --thumb-stripe-b: #12628a;
+  --thumb-label: #8fc9e0;
+  --shadow-accent: rgba(4, 30, 42, .40);
+  --shadow-lift: rgba(3, 26, 37, .28);
+  --shadow-deep: rgba(2, 20, 29, .55);
+  --scrim: rgba(4, 30, 42, .62);
+  --page-blur: rgba(14, 90, 122, .94);
+  --surface-blur: rgba(21, 104, 139, .96);
+  --accent-on-fill: #06364a;
+  --tap: rgba(255, 255, 255, .10);
+  --card: rgba(255, 255, 255, .08);
+  --card-line: rgba(255, 255, 255, .15);
+
   --serif: 'Cormorant Garamond', Georgia, serif;
   --sans: 'Manrope', system-ui, -apple-system, sans-serif;
+
+  /* Legacy aliases used by the print stylesheet. */
+  --navy: var(--deep);
+  --navy-2: var(--deep-2);
+  --navy-3: var(--deep-3);
 }
 
 * { box-sizing: border-box; }
@@ -19,7 +60,7 @@
 html, body {
   margin: 0;
   padding: 0;
-  background: #eef4f7;
+  background: var(--page);
   font-family: var(--sans);
   -webkit-font-smoothing: antialiased;
   text-wrap: pretty;
@@ -91,7 +132,15 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
 
   html, body { background: #fff !important; }
   .screen-only { display: none !important; }
-  .pm-doc { display: block; color: var(--navy); }
+
+  /* The screen palette is dark; paper is white. Pin the two colour tokens the
+     carte uses, or prices print in pale sky blue on white and vanish. */
+  .pm-doc {
+    display: block;
+    --navy: #0b2f42;
+    --accent: #2b7fa8;
+    color: var(--navy);
+  }
 
   /* -- masthead --------------------------------------------------------- */
   .pm-masthead { text-align: center; margin-bottom: 13mm; break-after: avoid; }

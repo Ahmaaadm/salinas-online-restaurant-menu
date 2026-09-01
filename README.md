@@ -186,6 +186,21 @@ Upload them from the admin panel — that is the whole workflow now. Any dish, c
 special without a photo shows the striped placeholder labelled with what belongs there.
 Categories fall back to their first dish's photo.
 
+## Palette
+
+The menu is **ocean**: sky blue throughout with white type. Every colour is a role token on
+`:root` in `src/index.css`, so a repaint means editing that one block — no component changes.
+
+Two constraints are baked in and worth keeping:
+
+- The blue is deep because the type is white. Dish text measures **7.6:1** against the ground,
+  clear of the 4.5:1 readability floor; a literal baby blue with white type lands near 1.7:1.
+- Nothing uses pure `#ffffff` as a surface — a white panel on blue reads as a missing patch.
+  Dish rows are translucent cards instead.
+
+The A4 export prints on white paper, so `@media print` pins its own ink colours rather than
+inheriting the dark screen palette.
+
 ## Design tokens
 
 - Navy gradient `#0b2f42 → #12455e → #17607f`, page `#f7fbfc`, tint `#e9f3f8`

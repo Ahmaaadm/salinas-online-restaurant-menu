@@ -18,7 +18,14 @@ themselves and the restaurant confirms in the chat. Never add a payment step.
 - Every dish name has an Arabic line beneath it (`direction: rtl`). Keep both in sync.
 - Cart state is a plain `{ itemId: qty }` object in `App.jsx`. No state library.
 - Touch targets ≥ 30px; body copy ≥ 12.5px.
-- Palette: navy `#0b2f42`, accent `#2b7fa8`, soft blue `#3f9dc9`, page `#f7fbfc`. Stay in it.
+- Colours are **role tokens** on `:root` in `src/index.css` (`--page`, `--surface`, `--card`,
+  `--deep`, `--ink`, `--on-deep`, `--accent`, `--line*`), never raw hex in JSX. Inline styles
+  use `var(--token)`; adding a literal breaks the palette.
+- One palette: **ocean** — sky blue throughout, white type. The ground is deep on purpose, so
+  white body text clears 4.5:1; a literal baby blue would sit near 1.7:1. Nothing uses pure
+  `#ffffff` as a surface. Dish rows are cards (`--card`, `--card-line`).
+- The `@media print` block **pins** `--navy` and `--accent` on `.pm-doc`. The screen palette is
+  dark and the carte prints on white paper — without pinning, prices print pale on white.
 - Fonts: Cormorant Garamond (display/serif), Manrope (UI). Loaded in `index.html`.
 - `image_url: null` renders a striped placeholder — do not delete that fallback.
 - Plat du jour is its own `specials` table, not a flag on dishes. The carousel hides itself
