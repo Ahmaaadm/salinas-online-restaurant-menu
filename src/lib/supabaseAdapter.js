@@ -6,6 +6,16 @@ import { gate } from './gate.js';
 
 const BUCKET = 'menu-photos';
 
+/* Public URL back to an object path, so a photo can be removed again.
+   Anything that is not one of our own uploads — an external URL, a local
+   mode data: URL, null — yields null and is never handed to storage. */
+function bucketPath(url) {
+  if (typeof url !== 'string') return null;
+  const marker = `/storage/v1/object/public/${BUCKET}/`;
+  const at = url.indexOf(marker);
+  return at === -1 ? null : decodeURIComponent(url.slice(at + marker.length).split('?')[0]);
+}
+
 async function client() {
   const { createClient } = await import('@supabase/supabase-js');
   return createClient(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY);
@@ -57,6 +67,12 @@ export function createSupabaseAdapter() {
       return this.load();
     },
 
+    /* Bulk delete, for clearing the whole plat du jour board at once. */
+    async deleteMany(table, ids) {
+      if (ids.length) check(await (await sb()).from(table).delete().in('id', ids));
+      return this.load();
+    },
+
     async saveSpecial(row) {
       check(await (await sb()).from('specials').upsert(row));
       return this.load();
@@ -72,6 +88,20 @@ export function createSupabaseAdapter() {
       const c = await sb();
       check(await c.storage.from(BUCKET).upload(path, blob, { contentType: 'image/jpeg', cacheControl: '31536000' }));
       return c.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+    },
+
+    async deleteImage(url) {
+      return this.deleteImages([url]);
+    },
+
+    /* Best effort on purpose. An orphaned file is harmless, but a failed
+       cleanup must never block a menu edit, so storage errors are swallowed. */
+    async deleteImages(urls) {
+      const paths = [...new Set(urls.map(bucketPath).filter(Boolean))];
+      if (!paths.length) return;
+      try {
+        await (await sb()).storage.from(BUCKET).remove(paths);
+      } catch { /* the file stays in the bucket; the menu is still correct */ }
     },
 
     ...gate

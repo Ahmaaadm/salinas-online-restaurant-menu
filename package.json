@@ -8,6 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "seed:sql": "node scripts/gen-seed.mjs",
+    "clear:photos": "node scripts/clear-photos.mjs",
     "demo:pdf": "vite build --mode demo --outDir dist-demo && node scripts/demo/capture.mjs && node scripts/demo/make-pdf.mjs"
   },
   "dependencies": {

@@ -85,6 +85,12 @@ export function createLocalAdapter() {
       return write({ ...db, [kind]: rows.reduce((list, row) => upsert(list, row), db[kind]) });
     },
 
+    async deleteMany(kind, ids) {
+      const db = read();
+      const gone = new Set(ids);
+      return write({ ...db, [kind]: db[kind].filter(r => !gone.has(r.id)) });
+    },
+
     async saveSpecial(row) {
       const db = read();
       return write({ ...db, specials: upsert(db.specials, row) });
@@ -99,6 +105,11 @@ export function createLocalAdapter() {
       const blob = await resizeImage(file, { maxSize: 700, quality: 0.72 });
       return blobToDataUrl(blob);
     },
+
+    /* Nothing to remove: the photo is a data URL inside the row itself, so it
+       goes when the row does. Here so both adapters expose the same surface. */
+    async deleteImage() {},
+    async deleteImages() {},
 
     ...gate,
 

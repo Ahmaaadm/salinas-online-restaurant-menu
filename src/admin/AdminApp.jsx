@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { adapter, toMenu, usingSupabase, useMenuStore } from '../lib/store.js';
 import PrintMenu from '../components/PrintMenu.jsx';
 import { money, PRICE_STEP } from '../lib/money.js';
@@ -67,6 +67,42 @@ function Login({ onIn }) {
 
 /* ------------------------------------------------------------- editors */
 
+/* A photo is uploaded the instant it is picked, so editing strands files: the
+   one that was replaced, and any that were uploaded and then replaced again.
+   Deleting inside the picker would be wrong — closing a sheet without saving
+   must not remove the photo the stored row still points at — so the editor
+   remembers every superseded URL and settles up once, at the end. */
+function usePhotoCleanup(row, f, set) {
+  const original = row.image_url ?? null;
+  const stale = useRef([]);
+  const settled = useRef(false);
+
+  const seal = urls => {
+    settled.current = true;
+    return adapter.deleteImages([...new Set(urls.filter(Boolean))]);
+  };
+
+  return {
+    /* The picker uploaded a replacement, or Remove cleared the field. */
+    change: next => {
+      if (f.image_url && f.image_url !== next) stale.current.push(f.image_url);
+      set({ image_url: next });
+    },
+    /* Saved: everything superseded is unreferenced now, the photo the row
+       arrived with included. */
+    kept: saved => seal(stale.current.filter(u => u !== saved)),
+    /* Row deleted: nothing it ever pointed at is referenced any more. Extra
+       URLs cover the dishes a deleted category takes down with it. */
+    purged: (extra = []) => seal([...stale.current, f.image_url, original, ...extra]),
+    /* Closed without saving: drop only what this sitting uploaded. Runs on
+       every close, so it no-ops once a save or delete has settled. */
+    dropped: () => {
+      if (settled.current) return;
+      return seal([...stale.current, f.image_url].filter(u => u !== original));
+    }
+  };
+}
+
 function Editor({ title, onClose, onSave, onDelete, canSave, children }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -115,17 +151,23 @@ function Editor({ title, onClose, onSave, onDelete, canSave, children }) {
 function SpecialEditor({ row, days, onClose, run }) {
   const [f, setF] = useState(row);
   const set = patch => setF(v => ({ ...v, ...patch }));
+  const photos = usePhotoCleanup(row, f, set);
 
   /* An edited plat may sit outside the week on screen — keep its own date
      in the list so switching weeks never silently reschedules it. */
   const dayOptions = [...new Set([...days, ...(f.service_date ? [f.service_date] : [])])].sort();
 
   return (
-    <Editor title={row.id ? 'Edit plat du jour' : 'New plat du jour'} onClose={onClose}
+    <Editor title={row.id ? 'Edit plat du jour' : 'New plat du jour'}
+      onClose={() => { photos.dropped(); onClose(); }}
       canSave={Boolean(f.name?.trim() && f.service_date)}
-      onSave={() => run('saveSpecial', { ...f, id: f.id || newId(f.name), price: Math.round(Number(f.price)) || 0 })}
-      onDelete={row.id ? () => run('deleteSpecial', row.id) : null}>
-      <ImagePicker value={f.image_url} onChange={u => set({ image_url: u })} upload={adapter.uploadImage} slotLabel="plat du jour" />
+      onSave={async () => {
+        const next = { ...f, id: f.id || newId(f.name), price: Math.round(Number(f.price)) || 0 };
+        await run('saveSpecial', next);
+        await photos.kept(next.image_url ?? null);
+      }}
+      onDelete={row.id ? async () => { await run('deleteSpecial', row.id); await photos.purged(); } : null}>
+      <ImagePicker value={f.image_url} onChange={photos.change} upload={adapter.uploadImage} slotLabel="plat du jour" />
       <Field title="Serving day" hint="Guests only see this on the day it is set to.">
         <select value={f.service_date ?? ''} onChange={e => set({ service_date: e.target.value || null })} style={inputStyle}>
           <option value="" disabled>Choose a day…</option>
@@ -152,18 +194,24 @@ function SpecialEditor({ row, days, onClose, run }) {
 function DishEditor({ row, categories, onClose, run }) {
   const [f, setF] = useState(row);
   const set = patch => setF(v => ({ ...v, ...patch }));
+  const photos = usePhotoCleanup(row, f, set);
 
   return (
-    <Editor title={row.id ? 'Edit dish' : 'New dish'} onClose={onClose}
+    <Editor title={row.id ? 'Edit dish' : 'New dish'}
+      onClose={() => { photos.dropped(); onClose(); }}
       canSave={Boolean(f.name?.trim() && f.category_id)}
-      onSave={() => run('saveDish', {
-        ...f,
-        id: f.id || newId(f.name),
-        price: Math.round(Number(f.price)) || 0,
-        slot: f.slot?.trim() || f.name.toLowerCase()
-      })}
-      onDelete={row.id ? () => run('deleteDish', row.id) : null}>
-      <ImagePicker value={f.image_url} onChange={u => set({ image_url: u })} upload={adapter.uploadImage} slotLabel={f.slot || 'dish'} />
+      onSave={async () => {
+        const next = {
+          ...f,
+          id: f.id || newId(f.name),
+          price: Math.round(Number(f.price)) || 0,
+          slot: f.slot?.trim() || f.name.toLowerCase()
+        };
+        await run('saveDish', next);
+        await photos.kept(next.image_url ?? null);
+      }}
+      onDelete={row.id ? async () => { await run('deleteDish', row.id); await photos.purged(); } : null}>
+      <ImagePicker value={f.image_url} onChange={photos.change} upload={adapter.uploadImage} slotLabel={f.slot || 'dish'} />
       <Field title="Dish name"><Text value={f.name} onChange={e => set({ name: e.target.value })} placeholder="Fried Calamari" /></Field>
       <Field title="Arabic"><Text rtl value={f.arabic || ''} onChange={e => set({ arabic: e.target.value })} placeholder="كاليماري مقلي" /></Field>
       <Field title="Category">
@@ -185,16 +233,24 @@ function DishEditor({ row, categories, onClose, run }) {
   );
 }
 
-function CategoryEditor({ row, dishCount, onClose, run }) {
+function CategoryEditor({ row, dishCount, dishPhotos, onClose, run }) {
   const [f, setF] = useState(row);
   const set = patch => setF(v => ({ ...v, ...patch }));
+  const photos = usePhotoCleanup(row, f, set);
 
   return (
-    <Editor title={row.id ? 'Edit category' : 'New category'} onClose={onClose}
+    <Editor title={row.id ? 'Edit category' : 'New category'}
+      onClose={() => { photos.dropped(); onClose(); }}
       canSave={Boolean(f.name?.trim())}
-      onSave={() => run('saveCategory', { ...f, id: f.id || newId(f.name) })}
-      onDelete={row.id ? () => run('deleteCategory', row.id) : null}>
-      <ImagePicker value={f.image_url} onChange={u => set({ image_url: u })} upload={adapter.uploadImage} slotLabel="category" />
+      onSave={async () => {
+        const next = { ...f, id: f.id || newId(f.name) };
+        await run('saveCategory', next);
+        await photos.kept(next.image_url ?? null);
+      }}
+      onDelete={row.id
+        ? async () => { await run('deleteCategory', row.id); await photos.purged(dishPhotos); }
+        : null}>
+      <ImagePicker value={f.image_url} onChange={photos.change} upload={adapter.uploadImage} slotLabel="category" />
       <Field title="Category name"><Text value={f.name} onChange={e => set({ name: e.target.value })} placeholder="Hot Sea Starters" /></Field>
       <Field title="Arabic"><Text rtl value={f.arabic || ''} onChange={e => set({ arabic: e.target.value })} placeholder="مقبلات بحرية ساخنة" /></Field>
       {row.id && dishCount > 0 && (
@@ -313,6 +369,7 @@ function Panel({ onOut }) {
   const [tab, setTab] = useState('specials');
   const [editing, setEditing] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [clearing, setClearing] = useState(false);
 
   /* Planning happens on Sunday for the week ahead, so open on next week
      when it is already Sunday and this week is effectively spent. */
@@ -348,6 +405,27 @@ function Panel({ onOut }) {
       .map((r, i) => ({ ...r, sort_order: i }))
       .filter(r => r.sort_order !== list.find(x => x.id === r.id).sort_order);
     return run('saveMany', kind, changed);
+  };
+
+  /* Starting a new week wipes the whole plat du jour board — every day of
+     every week — and the photos with it. The owner decides when the week
+     turns, so there is no date rule and nothing is ever deleted unasked.
+     Rows go first: if storage then fails, an unreferenced file is left behind,
+     which is harmless, rather than a row pointing at a photo that is gone. */
+  const startNewWeek = async () => {
+    const photos = specials.map(s => s.image_url).filter(Boolean);
+    const plats = `${specials.length} plat${specials.length === 1 ? '' : 's'} du jour`;
+    const withPhotos = photos.length ? ` and ${photos.length} photo${photos.length === 1 ? '' : 's'}` : '';
+    if (!confirm(`Delete ${plats}${withPhotos}? Every day of every week is cleared. This cannot be undone.`)) return;
+    setClearing(true);
+    try {
+      await run('deleteMany', 'specials', specials.map(s => s.id));
+      await adapter.deleteImages(photos);
+    } catch (ex) {
+      alert(`The board could not be cleared: ${ex.message}`);
+    } finally {
+      setClearing(false);
+    }
   };
 
   useEffect(() => {
@@ -411,6 +489,19 @@ function Panel({ onOut }) {
                   ))}
               </Section>
 
+              {specials.length > 0 && (
+                <Card style={{ padding: '15px 16px', display: 'flex', flexDirection: 'column', gap: 11 }}>
+                  <div style={{ font: '400 11.5px/1.5 Manrope,sans-serif', color: '#7b98a8' }}>
+                    Starting a new week clears the plat du jour board — every day of every week,
+                    including anything planned ahead — and deletes the photos with it.
+                  </div>
+                  <Button tone="danger" disabled={clearing} onClick={startNewWeek}>
+                    {clearing
+                      ? 'Clearing…'
+                      : `Start new week · clears ${specials.length} plat${specials.length === 1 ? '' : 's'}`}
+                  </Button>
+                </Card>
+              )}
             </>
           )}
 
@@ -478,7 +569,7 @@ function Panel({ onOut }) {
 
       {editing?.kind === 'special' && <SpecialEditor row={editing.row} days={days} run={run} onClose={() => setEditing(null)} />}
       {editing?.kind === 'dish' && <DishEditor row={editing.row} categories={categories} run={run} onClose={() => setEditing(null)} />}
-      {editing?.kind === 'category' && <CategoryEditor row={editing.row} dishCount={dishesIn(editing.row.id).length} run={run} onClose={() => setEditing(null)} />}
+      {editing?.kind === 'category' && <CategoryEditor row={editing.row} dishCount={dishesIn(editing.row.id).length} dishPhotos={dishesIn(editing.row.id).map(d => d.image_url)} run={run} onClose={() => setEditing(null)} />}
       </div>
 
       {exporting && <PrintMenu menu={printableMenu} onDone={() => setExporting(false)} />}

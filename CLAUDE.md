@@ -44,6 +44,15 @@ themselves and the restaurant confirms in the chat. Never add a payment step.
   treat the panel as unprotected and never put anything sensitive behind it.
 - Photos are resized in the browser before upload (`src/lib/images.js`) — the Supabase free
   tier has no server-side image transformation.
+- A photo is deleted once nothing references it: replacing or removing one in an editor, or
+  deleting the row, cleans the bucket through `deleteImage`/`deleteImages` on **both** adapters
+  (a no-op locally, where the photo is a data URL inside the row). `usePhotoCleanup` settles on
+  save or close, never inside `ImagePicker` — closing a sheet without saving must not delete the
+  photo the stored row still points at. Cleanup is best effort and swallows storage errors: an
+  orphaned file is harmless, a blocked menu edit is not.
+- "Start new week" in the plat du jour planner deletes **every** special and its photos — all
+  days, all weeks, including anything planned ahead. That is deliberate: it is the only cleanup
+  path, there is no date rule and no automatic sweep, and nothing is removed without a confirm.
 
 - The A4 export (`src/components/PrintMenu.jsx` + the `@media print` block in `index.css`) is a
   separate document, not the screen menu reflowed. It is **admin-only** — mounted from
@@ -57,3 +66,8 @@ themselves and the restaurant confirms in the chat. Never add a payment step.
 - `npm run dev` — dev server
 - `npm run build` — production build to `dist/`
 - `supabase/schema.sql` — run once in the Supabase SQL editor to create tables, RLS and the bucket
+- `supabase/clear-menu.sql` — wipes categories and dishes to start fresh. Leaves specials alone,
+  and cannot remove photos: it lists the files it orphans so they can be deleted in Storage.
+- `npm run clear:photos` — deletes bucket photos nothing points at (`--all` empties the bucket).
+  Dry run unless `--yes`. Run it from the project root; it reads `.env` relative to the cwd.
+  This is the only way to actually free storage — SQL cannot delete a file, only its metadata.
