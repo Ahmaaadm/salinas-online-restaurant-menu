@@ -12,3 +12,5 @@ dist-ssr
 .env.demo
 /dist-demo/
 /demo/
+
+/qr/
