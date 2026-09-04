@@ -50,9 +50,13 @@ themselves and the restaurant confirms in the chat. Never add a payment step.
   save or close, never inside `ImagePicker` — closing a sheet without saving must not delete the
   photo the stored row still points at. Cleanup is best effort and swallows storage errors: an
   orphaned file is harmless, a blocked menu edit is not.
-- "Start new week" in the plat du jour planner deletes **every** special and its photos — all
-  days, all weeks, including anything planned ahead. That is deliberate: it is the only cleanup
-  path, there is no date rule and no automatic sweep, and nothing is removed without a confirm.
+- Two clears in the plat du jour planner, both a button and a confirm — there is no automatic
+  sweep and no date rule that deletes on its own, deliberately.
+  "Start new week" deletes **every** special and its photos, all days, all weeks, including
+  anything planned ahead. "Clear past plats" appears only when plats from finished weeks
+  (`service_date < startOfWeek(today)`) are still stored, and takes just those, so it can never
+  touch today's plat or a week planned ahead. The reminder exists because forgetting to clear
+  costs storage, never correctness: guests only ever match today, so an old plat is invisible.
 
 - The A4 export (`src/components/PrintMenu.jsx` + the `@media print` block in `index.css`) is a
   separate document, not the screen menu reflowed. It is **admin-only** — mounted from

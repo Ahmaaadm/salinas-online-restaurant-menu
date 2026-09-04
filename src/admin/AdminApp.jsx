@@ -148,6 +148,33 @@ function Editor({ title, onClose, onSave, onDelete, canSave, children }) {
   );
 }
 
+/* Stands between the owner and a new plat while a finished week is still on the
+   board, so every week starts from an empty one. Deliberately not dismissable
+   by the backdrop — the point is that it interrupts. "Not now" exists only so a
+   failed delete cannot trap anyone; it closes without adding the plat. */
+function ClearFirst({ tally, busy, onClear, onCancel }) {
+  return (
+    <div style={{ position: 'fixed', inset: 0, zIndex: 95, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 22 }}>
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(6,26,36,.62)' }} />
+      <div style={{ position: 'relative', width: '100%', maxWidth: 360, background: '#f7fbfc', borderRadius: 20, overflow: 'hidden', boxShadow: '0 24px 60px rgba(4,20,29,.4)' }}>
+        <div style={{ padding: '18px 20px 4px', font: "400 22px/1.2 'Cormorant Garamond',serif", color: NAVY, letterSpacing: '.03em' }}>
+          Clear the old week first
+        </div>
+        <div style={{ padding: '6px 20px 18px', font: '400 12.5px/1.6 Manrope,sans-serif', color: '#4b7085' }}>
+          <strong style={{ color: NAVY }}>{tally}</strong> from weeks that have already finished
+          are still on the board. Clear them and the new week starts fresh.
+        </div>
+        <div style={{ padding: '14px 20px 20px', borderTop: `1px solid ${LINE}`, background: '#fff', display: 'flex', gap: 10 }}>
+          <Button disabled={busy} onClick={onCancel}>Not now</Button>
+          <Button tone="danger" disabled={busy} onClick={onClear} style={{ flex: 1 }}>
+            {busy ? 'Clearing…' : 'Clear and continue'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function SpecialEditor({ row, days, onClose, run }) {
   const [f, setF] = useState(row);
   const set = patch => setF(v => ({ ...v, ...patch }));
@@ -370,6 +397,7 @@ function Panel({ onOut }) {
   const [editing, setEditing] = useState(null);
   const [exporting, setExporting] = useState(false);
   const [clearing, setClearing] = useState(false);
+  const [mustClear, setMustClear] = useState(false);
 
   /* Planning happens on Sunday for the week ahead, so open on next week
      when it is already Sunday and this week is effectively spent. */
@@ -407,25 +435,67 @@ function Panel({ onOut }) {
     return run('saveMany', kind, changed);
   };
 
-  /* Starting a new week wipes the whole plat du jour board — every day of
-     every week — and the photos with it. The owner decides when the week
-     turns, so there is no date rule and nothing is ever deleted unasked.
+  /* Plats from weeks that have already finished. Guests never see them — the
+     menu only matches today — but they sit in the table for good, and their
+     photos keep taking up storage, so the owner is told they are there. */
+  const finishedWeeks = useMemo(() => {
+    const thisWeek = toISODate(startOfWeek(new Date()));
+    return specials.filter(s => s.service_date && s.service_date < thisWeek);
+  }, [specials]);
+
+  const tally = rows => {
+    const photos = rows.filter(s => s.image_url).length;
+    return `${rows.length} plat${rows.length === 1 ? '' : 's'} du jour`
+      + (photos ? ` and ${photos} photo${photos === 1 ? '' : 's'}` : '');
+  };
+
+  /* Does the deleting only — every caller asks first, in its own way. Reports
+     back so the modal knows whether it may go on to the new plat.
      Rows go first: if storage then fails, an unreferenced file is left behind,
      which is harmless, rather than a row pointing at a photo that is gone. */
-  const startNewWeek = async () => {
-    const photos = specials.map(s => s.image_url).filter(Boolean);
-    const plats = `${specials.length} plat${specials.length === 1 ? '' : 's'} du jour`;
-    const withPhotos = photos.length ? ` and ${photos.length} photo${photos.length === 1 ? '' : 's'}` : '';
-    if (!confirm(`Delete ${plats}${withPhotos}? Every day of every week is cleared. This cannot be undone.`)) return;
+  const clearSpecials = async rows => {
+    if (!rows.length) return false;
+    const photos = rows.map(s => s.image_url).filter(Boolean);
     setClearing(true);
     try {
-      await run('deleteMany', 'specials', specials.map(s => s.id));
+      await run('deleteMany', 'specials', rows.map(s => s.id));
       await adapter.deleteImages(photos);
+      return true;
     } catch (ex) {
-      alert(`The board could not be cleared: ${ex.message}`);
+      alert(`The plats could not be cleared: ${ex.message}`);
+      return false;
     } finally {
       setClearing(false);
     }
+  };
+
+  /* Targeted: only weeks that are over, so it can never take today's plat or
+     a week planned ahead. */
+  const clearFinishedWeeks = () => {
+    if (confirm(`Delete ${tally(finishedWeeks)} from weeks that have already finished?\n\n`
+      + 'This week and anything planned ahead are kept. This cannot be undone.')) clearSpecials(finishedWeeks);
+  };
+
+  /* Blunt: the whole board, every day of every week. */
+  const startNewWeek = () => {
+    if (confirm(`Delete ${tally(specials)}?\n\n`
+      + 'Every day of every week is cleared, including anything planned ahead. This cannot be undone.')) clearSpecials(specials);
+  };
+
+  const newSpecial = () => ({
+    name: '', arabic: '', tagline: '', price: '', image_url: null,
+    active: true, service_date: selectedDay, sort_order: daySpecials.length
+  });
+
+  /* Adding a plat is where a new week begins, so that is where the old one has
+     to be dealt with. Every other tab adds as it always did. */
+  const add = () => {
+    if (tab === 'specials' && finishedWeeks.length) return setMustClear(true);
+    setEditing(
+      tab === 'specials' ? { kind: 'special', row: newSpecial() }
+        : tab === 'dishes' ? { kind: 'dish', row: { name: '', arabic: '', price: '', image_url: null, slot: '', available: true, category_id: categories[0]?.id ?? '', sort_order: 999 } }
+          : { kind: 'category', row: { name: '', arabic: '', image_url: null, sort_order: categories.length } }
+    );
   };
 
   useEffect(() => {
@@ -469,6 +539,19 @@ function Panel({ onOut }) {
         <main style={{ padding: '18px 16px', display: 'flex', flexDirection: 'column', gap: 20 }}>
           {tab === 'specials' && (
             <>
+              {finishedWeeks.length > 0 && (
+                <Card style={{ padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 11, background: 'rgba(43,127,168,.06)', border: '1px solid rgba(43,127,168,.22)', boxShadow: 'none' }}>
+                  <div style={{ font: '400 12px/1.55 Manrope,sans-serif', color: '#4b7085' }}>
+                    <strong style={{ color: NAVY }}>{tally(finishedWeeks)}</strong> from weeks that have
+                    already finished {finishedWeeks.length === 1 ? 'is' : 'are'} still stored. Guests never
+                    see them, but the photos keep taking up space.
+                  </div>
+                  <Button disabled={clearing} onClick={clearFinishedWeeks}>
+                    {clearing ? 'Clearing…' : `Clear ${finishedWeeks.length} past plat${finishedWeeks.length === 1 ? '' : 's'}`}
+                  </Button>
+                </Card>
+              )}
+
               <WeekBar
                 weekStart={weekStart} days={days} selected={selectedDay}
                 countFor={iso => specialsOn(iso).length}
@@ -543,12 +626,7 @@ function Panel({ onOut }) {
 
         <div style={{ position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 40, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
           <div style={{ width: '100%', maxWidth: 520, pointerEvents: 'auto', padding: '12px 16px 18px', background: 'rgba(255,255,255,.96)', backdropFilter: 'blur(14px)', borderTop: `1px solid ${LINE}`, display: 'flex', gap: 10 }}>
-            <Button tone="dark" style={{ flex: 1, padding: 14 }}
-              onClick={() => setEditing(
-                tab === 'specials' ? { kind: 'special', row: { name: '', arabic: '', tagline: '', price: '', image_url: null, active: true, service_date: selectedDay, sort_order: daySpecials.length } }
-                  : tab === 'dishes' ? { kind: 'dish', row: { name: '', arabic: '', price: '', image_url: null, slot: '', available: true, category_id: categories[0]?.id ?? '', sort_order: 999 } }
-                    : { kind: 'category', row: { name: '', arabic: '', image_url: null, sort_order: categories.length } }
-              )}
+            <Button tone="dark" style={{ flex: 1, padding: 14 }} onClick={add}
               disabled={tab === 'dishes' && categories.length === 0}>
               + Add {tab === 'specials' ? `plat du jour · ${weekdayShortOf(selectedDay)} ${dayOfMonth(selectedDay)}` : tab === 'dishes' ? 'dish' : 'category'}
             </Button>
@@ -566,6 +644,21 @@ function Panel({ onOut }) {
           </div>
         </div>
       </div>
+
+      {mustClear && (
+        <ClearFirst tally={tally(finishedWeeks)} busy={clearing}
+          onCancel={() => setMustClear(false)}
+          onClear={async () => {
+            if (!await clearSpecials(finishedWeeks)) return;
+            setMustClear(false);
+            /* Never drop the fresh plat back into the week just cleared, or it
+               would count as finished again and ask the same question next time. */
+            const thisWeek = startOfWeek(new Date());
+            const day = selectedDay < toISODate(thisWeek) ? todayISO() : selectedDay;
+            if (day !== selectedDay) { setWeekStart(thisWeek); setSelectedDay(day); }
+            setEditing({ kind: 'special', row: { ...newSpecial(), service_date: day, sort_order: specialsOn(day).length } });
+          }} />
+      )}
 
       {editing?.kind === 'special' && <SpecialEditor row={editing.row} days={days} run={run} onClose={() => setEditing(null)} />}
       {editing?.kind === 'dish' && <DishEditor row={editing.row} categories={categories} run={run} onClose={() => setEditing(null)} />}
