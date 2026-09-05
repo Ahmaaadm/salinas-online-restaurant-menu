@@ -295,12 +295,25 @@ export default function App() {
 
       {groups.map(g => (
         <section key={g.id} style={{ padding: '28px 18px 4px' }}>
-          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14, padding: '0 4px 14px', borderBottom: '1px solid var(--line)' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <h2 style={{ margin: 0, font: "400 27px/1 'Cormorant Garamond',serif", color: 'var(--ink)', letterSpacing: '.02em' }}>{g.name}</h2>
-              <div style={{ font: '400 13px/1.3 Manrope,sans-serif', color: 'var(--ink-muted)', direction: 'rtl' }}>{g.arabic}</div>
+          <div style={{ padding: '0 4px 14px', borderBottom: '1px solid var(--line)', display: 'flex', flexDirection: 'column', gap: 9 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 14 }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <h2 style={{ margin: 0, font: "400 27px/1 'Cormorant Garamond',serif", color: 'var(--ink)', letterSpacing: '.02em' }}>{g.name}</h2>
+                <div style={{ alignSelf: 'flex-start', font: '400 13px/1.3 Manrope,sans-serif', color: 'var(--ink-muted)', direction: 'rtl' }}>{g.arabic}</div>
+              </div>
+              <div style={{ flex: 'none', font: '500 10.5px/1 Manrope,sans-serif', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-faint)', paddingBottom: 4 }}>{g.items.length} dishes</div>
             </div>
-            <div style={{ font: '500 10.5px/1 Manrope,sans-serif', letterSpacing: '.18em', textTransform: 'uppercase', color: 'var(--ink-faint)', paddingBottom: 4 }}>{g.items.length} dishes</div>
+
+            {(g.note || g.note_arabic) && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {g.note && (
+                  <div style={{ font: "italic 400 12.5px/1.45 'Cormorant Garamond',serif", color: 'var(--ink-faint)' }}>{g.note}</div>
+                )}
+                {g.note_arabic && (
+                  <div style={{ font: '400 12.5px/1.5 Manrope,sans-serif', color: 'var(--ink-faint)', direction: 'rtl', textAlign: 'right' }}>{g.note_arabic}</div>
+                )}
+              </div>
+            )}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column' }}>
             {g.items.map(it => <DishRow key={it.id} item={it} qty={cart[it.id] || 0} onAdd={() => add(it)} />)}

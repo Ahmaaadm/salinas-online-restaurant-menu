@@ -270,7 +270,7 @@ function CategoryEditor({ row, dishCount, dishPhotos, onClose, run }) {
       onClose={() => { photos.dropped(); onClose(); }}
       canSave={Boolean(f.name?.trim())}
       onSave={async () => {
-        const next = { ...f, id: f.id || newId(f.name) };
+        const next = { ...f, id: f.id || newId(f.name), note: f.note?.trim() || null, note_arabic: f.note_arabic?.trim() || null };
         await run('saveCategory', next);
         await photos.kept(next.image_url ?? null);
       }}
@@ -280,6 +280,12 @@ function CategoryEditor({ row, dishCount, dishPhotos, onClose, run }) {
       <ImagePicker value={f.image_url} onChange={photos.change} upload={adapter.uploadImage} slotLabel="category" />
       <Field title="Category name"><Text value={f.name} onChange={e => set({ name: e.target.value })} placeholder="Hot Sea Starters" /></Field>
       <Field title="Arabic"><Text rtl value={f.arabic || ''} onChange={e => set({ arabic: e.target.value })} placeholder="مقبلات بحرية ساخنة" /></Field>
+      <Field title="Serving note" hint="Small line under the category name. Optional — leave it empty and nothing shows.">
+        <Text value={f.note || ''} onChange={e => set({ note: e.target.value })} placeholder="servi avec riz ou attiéké" />
+      </Field>
+      <Field title="Serving note · Arabic">
+        <Text rtl value={f.note_arabic || ''} onChange={e => set({ note_arabic: e.target.value })} placeholder="يقدم مع الأرز أو الأتييكيه" />
+      </Field>
       {row.id && dishCount > 0 && (
         <div style={{ font: '400 11.5px/1.5 Manrope,sans-serif', color: '#b4453c', padding: '10px 12px', borderRadius: 11, background: 'rgba(180,69,60,.07)' }}>
           Deleting this category also deletes its {dishCount} {dishCount === 1 ? 'dish' : 'dishes'}.

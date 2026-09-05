@@ -16,6 +16,11 @@ themselves and the restaurant confirms in the chat. Never add a payment step.
 - Styling is inline React style objects (matching the original design) plus CSS variables and
   keyframes in `src/index.css`. Don't add a CSS framework or Tailwind unless asked.
 - Every dish name has an Arabic line beneath it (`direction: rtl`). Keep both in sync.
+- Categories carry an optional serving note in both languages — `note` ("servi avec riz ou
+  attiéké") and `note_arabic` — shown under the name on screen and on the carte. Each line
+  renders only if it has text, so a category can have both, one or neither, and null renders
+  nothing at all: no empty line, no placeholder. Needs `supabase/add-category-note.sql` run
+  once, or saving a category fails on the missing column.
 - Cart state is a plain `{ itemId: qty }` object in `App.jsx`. No state library.
 - Touch targets ≥ 30px; body copy ≥ 12.5px.
 - Colours are **role tokens** on `:root` in `src/index.css` (`--page`, `--surface`, `--card`,

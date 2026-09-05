@@ -9,7 +9,7 @@ const KEY = 'salinas.menu.v1';
 
 function seed() {
   const categories = MENU.map((g, i) => ({
-    id: g.id, name: g.name, arabic: g.arabic, image_url: g.image, sort_order: i
+    id: g.id, name: g.name, arabic: g.arabic, image_url: g.image, note: g.note ?? null, note_arabic: g.note_arabic ?? null, sort_order: i
   }));
   const dishes = MENU.flatMap((g, gi) =>
     g.items.map((it, i) => ({

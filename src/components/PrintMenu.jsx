@@ -65,6 +65,8 @@ function CategoryBlock({ category, index }) {
         <div className="pm-cat-titles">
           <span className="pm-cat-num">{pad2(index + 1)}</span>
           <h2>{category.name}</h2>
+          {category.note && <p className="pm-cat-note">{category.note}</p>}
+          {category.note_arabic && <p className="pm-cat-note-ar">{category.note_arabic}</p>}
         </div>
         <div className="pm-cat-meta">
           {category.arabic && <p className="pm-cat-arabic">{category.arabic}</p>}

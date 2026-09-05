@@ -218,6 +218,18 @@ input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-
     letter-spacing: .02em;
     color: var(--navy);
   }
+  .pm-cat-note {
+    margin: 1.5mm 0 0;
+    font: italic 400 10pt/1.25 var(--serif);
+    color: #4b7085;
+  }
+  .pm-cat-note-ar {
+    margin: 0.8mm 0 0;
+    font: 400 9pt/1.3 var(--sans);
+    direction: rtl;
+    color: #4b7085;
+  }
+
   .pm-cat-meta { flex: none; text-align: right; }
   .pm-cat-arabic {
     margin: 0 0 2mm;
