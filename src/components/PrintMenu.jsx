@@ -13,79 +13,60 @@ import { money } from '../lib/money.js';
 
 const pad2 = n => String(n).padStart(2, '0');
 
-function DishCard({ dish }) {
+/* One dish: a small square photo, the name, a dotted leader to the price, and
+   the Arabic beneath. Two of these fit across an A4 column, which is what keeps
+   the carte to a few sheets instead of a photo album. */
+function Dish({ dish, withThumb }) {
   return (
     <article className="pm-dish">
-      {dish.image_url && (
-        <div className="pm-dish-photo"><img src={dish.image_url} alt="" /></div>
+      {withThumb && (
+        dish.image_url
+          ? <div className="pm-thumb"><img src={dish.image_url} alt="" /></div>
+          /* An empty frame rather than no frame: the names stay in one column
+             whether or not a dish has been photographed yet. */
+          : <div className="pm-thumb pm-thumb-empty" />
       )}
-      <div className="pm-dish-text">
-        <h3>{dish.name}</h3>
-        {dish.arabic && <p className="pm-arabic">{dish.arabic}</p>}
-        <p className="pm-price">{money(dish.price)}</p>
+      <div className="pm-txt">
+        <div className="pm-row">
+          <h3>{dish.name}</h3>
+          <span className="pm-leader" />
+          <span className="pm-price">{money(dish.price)}</span>
+        </div>
+        {dish.arabic && <p className="pm-ar">{dish.arabic}</p>}
       </div>
-    </article>
-  );
-}
-
-/* Without photos a dotted-leader list reads far better than a grid of
-   name-and-price blocks floating in space. */
-function DishLine({ dish }) {
-  return (
-    <article className="pm-line">
-      <div className="pm-line-head">
-        <h3>{dish.name}</h3>
-        <span className="pm-leader" />
-        <span className="pm-price">{money(dish.price)}</span>
-      </div>
-      {dish.arabic && <p className="pm-arabic">{dish.arabic}</p>}
     </article>
   );
 }
 
 function CategoryBlock({ category, index }) {
-  const hasPhotos = category.items.some(i => i.image_url);
-
-  /* The header travels with its first row and no further. Binding it to the
-     whole category pushed entire sections onto fresh sheets; binding it to
-     nothing left headers stranded at the foot of a page. */
-  const openCount = hasPhotos ? 3 : 2;
-  const opening = category.items.slice(0, openCount);
-  const rest = category.items.slice(openCount);
-  const Item = hasPhotos ? DishCard : DishLine;
-  const wrap = hasPhotos ? 'pm-grid' : 'pm-list';
+  /* All or nothing per category: reserving thumb space in a category nobody
+     has photographed would print a column of empty boxes. */
+  const withThumb = category.items.some(i => i.image_url);
 
   return (
     <section className="pm-category">
-      <div className="pm-cat-open">
       <header className="pm-cat-head">
         {category.image_url && (
           <div className="pm-cat-photo"><img src={category.image_url} alt="" /></div>
         )}
-        <div className="pm-cat-titles">
-          <span className="pm-cat-num">{pad2(index + 1)}</span>
-          <h2>{category.name}</h2>
+        <span className="pm-cat-num">{pad2(index + 1)}</span>
+        <h2>{category.name}</h2>
+        {category.arabic && <span className="pm-cat-ar">{category.arabic}</span>}
+        <span className="pm-cat-count">
+          {category.items.length} {category.items.length === 1 ? 'dish' : 'dishes'}
+        </span>
+      </header>
+
+      {(category.note || category.note_arabic) && (
+        <div className="pm-cat-notes">
           {category.note && <p className="pm-cat-note">{category.note}</p>}
           {category.note_arabic && <p className="pm-cat-note-ar">{category.note_arabic}</p>}
         </div>
-        <div className="pm-cat-meta">
-          {category.arabic && <p className="pm-cat-arabic">{category.arabic}</p>}
-          <span className="pm-cat-count">
-            {category.items.length} {category.items.length === 1 ? 'dish' : 'dishes'}
-          </span>
-        </div>
-      </header>
-
-        <div className={wrap}>
-          {opening.map(d => <Item key={d.id} dish={d} />)}
-        </div>
-      </div>
-
-      {rest.length > 0 && (
-        <div className={wrap}>
-          {rest.map(d => <Item key={d.id} dish={d} />)}
-        </div>
       )}
+
+      <div className="pm-items">
+        {category.items.map(d => <Dish key={d.id} dish={d} withThumb={withThumb} />)}
+      </div>
     </section>
   );
 }
