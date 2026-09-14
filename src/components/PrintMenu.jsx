@@ -33,6 +33,8 @@ function Dish({ dish, withThumb }) {
           <span className="pm-price">{money(dish.price)}</span>
         </div>
         {dish.arabic && <p className="pm-ar">{dish.arabic}</p>}
+        {dish.note && <p className="pm-note">{dish.note}</p>}
+        {dish.note_arabic && <p className="pm-note-ar">{dish.note_arabic}</p>}
       </div>
     </article>
   );

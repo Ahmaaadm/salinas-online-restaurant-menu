@@ -232,7 +232,9 @@ function DishEditor({ row, categories, onClose, run }) {
           ...f,
           id: f.id || newId(f.name),
           price: Math.round(Number(f.price)) || 0,
-          slot: f.slot?.trim() || f.name.toLowerCase()
+          slot: f.slot?.trim() || f.name.toLowerCase(),
+          note: f.note?.trim() || null,
+          note_arabic: f.note_arabic?.trim() || null
         };
         await run('saveDish', next);
         await photos.kept(next.image_url ?? null);
@@ -249,6 +251,12 @@ function DishEditor({ row, categories, onClose, run }) {
       </Field>
       <Field title="Price">
         <Text type="number" min="0" step={PRICE_STEP} value={f.price} onChange={e => set({ price: e.target.value })} />
+      </Field>
+      <Field title="Note" hint="Small line under the dish, for guests. Optional — leave it empty and nothing shows.">
+        <Text value={f.note || ''} onChange={e => set({ note: e.target.value })} placeholder="pour 2 personnes" />
+      </Field>
+      <Field title="Note · Arabic">
+        <Text rtl value={f.note_arabic || ''} onChange={e => set({ note_arabic: e.target.value })} placeholder="لشخصين" />
       </Field>
       <Field title="Placeholder label" hint="Text shown in the striped box until a photo is added.">
         <Text value={f.slot || ''} onChange={e => set({ slot: e.target.value })} placeholder="calamari" />

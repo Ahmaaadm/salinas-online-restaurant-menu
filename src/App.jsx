@@ -115,6 +115,12 @@ function DishRow({ item, qty, onAdd }) {
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 3 }}>
         <div style={{ font: '600 15.5px/1.25 Manrope,sans-serif', color: 'var(--ink)' }}>{item.name}</div>
         <div style={{ font: '400 12.5px/1.45 Manrope,sans-serif', color: 'var(--ink-muted)', direction: 'rtl', textAlign: 'right' }}>{item.arabic}</div>
+        {item.note && (
+          <div style={{ font: "italic 400 12.5px/1.4 'Cormorant Garamond',serif", color: 'var(--ink-muted)' }}>{item.note}</div>
+        )}
+        {item.note_arabic && (
+          <div style={{ font: '400 12.5px/1.45 Manrope,sans-serif', color: 'var(--ink-muted)', direction: 'rtl', textAlign: 'right' }}>{item.note_arabic}</div>
+        )}
         <div style={{ font: '600 14px/1 Manrope,sans-serif', color: ACCENT, marginTop: 2 }}>{money(item.price)}</div>
       </div>
       <div style={{ flex: 'none', alignSelf: 'center' }}>

@@ -15,6 +15,7 @@ function seed() {
     g.items.map((it, i) => ({
       id: it.id, category_id: g.id, name: it.name, arabic: it.arabic,
       price: it.price, image_url: it.image, slot: it.slot,
+      note: it.note ?? null, note_arabic: it.note_arabic ?? null,
       available: true, sort_order: gi * 100 + i
     }))
   );

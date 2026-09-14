@@ -21,6 +21,9 @@ themselves and the restaurant confirms in the chat. Never add a payment step.
   renders only if it has text, so a category can have both, one or neither, and null renders
   nothing at all: no empty line, no placeholder. Needs `supabase/add-category-note.sql` run
   once, or saving a category fails on the missing column.
+- Dishes carry the same optional pair — `note` ("pour 2 personnes") and `note_arabic` — under
+  the Arabic line on screen and on the carte, with the same render-only-if-present rule.
+  Needs `supabase/add-dish-note.sql` run once.
 - Cart state is a plain `{ itemId: qty }` object in `App.jsx`. No state library.
 - Touch targets ≥ 30px; body copy ≥ 12.5px.
 - Colours are **role tokens** on `:root` in `src/index.css` (`--page`, `--surface`, `--card`,
